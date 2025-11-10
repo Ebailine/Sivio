@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 
 export default function Home() {
+  const { isSignedIn, user } = useUser()
   const [dbStatus, setDbStatus] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -28,13 +31,27 @@ export default function Home() {
         <p className="text-xl text-gray-600 mb-8">
           Your AI-powered job application assistant
         </p>
+
         <div className="flex gap-4 justify-center mb-8">
-          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-            Get Started
-          </button>
-          <button className="border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
-            Learn More
-          </button>
+          {isSignedIn ? (
+            <>
+              <Link href="/dashboard" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                Go to Dashboard
+              </Link>
+              <p className="flex items-center text-gray-600">
+                Signed in as {user.firstName}
+              </p>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-up" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                Get Started
+              </Link>
+              <Link href="/sign-in" className="border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
+                Sign In
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Database Test Section */}
