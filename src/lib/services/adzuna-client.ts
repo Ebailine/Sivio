@@ -85,6 +85,7 @@ export class AdzunaClient {
     const url = `${ADZUNA_BASE_URL}/jobs/${this.country}/search/${page}?${searchParams.toString()}`
 
     console.log('Adzuna API call:', { category, what, results_per_page })
+    console.log('Full URL:', url)
 
     const response = await fetch(url)
 

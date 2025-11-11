@@ -30,6 +30,7 @@ export async function GET() {
         count: searchResults.count,
         jobsReturned: searchResults.jobs.length,
         firstJobTitle: searchResults.jobs[0]?.title || 'N/A',
+        note: 'Check Vercel logs for URL',
       })
     } catch (error: any) {
       results.push({
