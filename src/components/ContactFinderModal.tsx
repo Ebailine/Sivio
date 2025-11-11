@@ -58,6 +58,7 @@ export default function ContactFinderModal({
 
   // Editable search parameters
   const [searchCompany, setSearchCompany] = useState(companyName)
+  const [searchDomain, setSearchDomain] = useState(companyDomain || '')
   const [searchPosition, setSearchPosition] = useState(jobTitle || '')
   const [searchLocation, setSearchLocation] = useState(location || '')
 
@@ -67,10 +68,11 @@ export default function ContactFinderModal({
   useEffect(() => {
     if (isOpen) {
       setSearchCompany(companyName)
+      setSearchDomain(companyDomain || '')
       setSearchPosition(jobTitle || '')
       setSearchLocation(location || '')
     }
-  }, [isOpen, companyName, jobTitle, location])
+  }, [isOpen, companyName, companyDomain, jobTitle, location])
 
   useEffect(() => {
     if (isOpen && companyDomain) {
@@ -120,7 +122,7 @@ export default function ContactFinderModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          domain: companyDomain,
+          domain: searchDomain.trim() || undefined,
           company: searchCompany.trim(),
           jobId,
           jobTitle: searchPosition.trim() || undefined,
@@ -253,6 +255,22 @@ export default function ContactFinderModal({
                         placeholder="e.g., Stripe, Meta, Acme Inc"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Company Website Domain
+                      </label>
+                      <input
+                        type="text"
+                        value={searchDomain}
+                        onChange={(e) => setSearchDomain(e.target.value)}
+                        placeholder="e.g., stripe.com, meta.com (AI will guess if empty)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        ⚠️ If search fails, manually enter the correct website domain here
+                      </p>
                     </div>
 
                     <div>
