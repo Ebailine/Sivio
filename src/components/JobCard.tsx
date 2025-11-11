@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays } from 'lucide-react'
 
 interface JobCardProps {
@@ -23,6 +23,11 @@ interface JobCardProps {
 export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCardProps) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(isSaved)
+
+  // Sync internal state with prop when it changes
+  useEffect(() => {
+    setSaved(isSaved)
+  }, [isSaved])
 
   const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation()
