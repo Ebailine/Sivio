@@ -12,6 +12,7 @@ import { jobAnalyzer } from '@/lib/services/job-analyzer'
 import { companyResearcher } from '@/lib/services/company-researcher'
 import { linkedInScraper } from '@/lib/services/linkedin-scraper'
 import { creditTracker } from '@/lib/services/credit-tracker'
+import { emailPatternGenerator } from '@/lib/services/email-pattern-generator'
 
 const CREDIT_COST_PER_CONTACT = 1
 const CREDIT_COST_PER_EMAIL_VALIDATION = 1
@@ -315,9 +316,120 @@ export async function POST(request: Request) {
 
     if (!snovResults || snovResults.length === 0) {
       console.log('❌ No contacts found from Snov.io')
-      console.log('🔄 Activating LinkedIn-only fallback mode...')
+      console.log('🔄 Activating multi-tier fallback system...')
 
-      // FALLBACK TIER 1: Use LinkedIn-inferred contacts (already generated at line 192!)
+      // FALLBACK TIER 1: Email Pattern Generation (costs 1-3 credits per contact)
+      if (linkedInContacts && linkedInContacts.length > 0) {
+        console.log('=== Fallback Tier 1: Email Pattern Generation ===')
+        console.log(`Attempting to generate emails for ${linkedInContacts.length} LinkedIn contacts...`)
+
+        try {
+          const contactsWithEmails = await emailPatternGenerator.generateVerifiedEmails(
+            linkedInContacts.slice(0, 4), // Only top 4 to control costs
+            searchDomain,
+            2 // Max 2 verifications per contact to stay under budget
+          )
+
+          const validEmails = contactsWithEmails.filter(c => c.generatedEmail?.status === 'valid')
+
+          if (validEmails.length > 0) {
+            console.log(`✅ Pattern generation SUCCESS: ${validEmails.length} valid emails found`)
+
+            // Convert to standard contact format
+            const patternContacts = validEmails.map(c => ({
+              email: c.generatedEmail!.email,
+              first_name: c.name.split(' ')[0],
+              last_name: c.name.split(' ').slice(1).join(' ') || '',
+              full_name: c.name,
+              position: c.title,
+              company_name: company,
+              company_domain: searchDomain,
+              linkedin_url: c.profileUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + c.title)}`,
+              email_status: c.generatedEmail!.status,
+              relevance_score: c.relevanceScore,
+              is_key_decision_maker: c.relevanceScore >= 85,
+              department: c.department,
+              source: 'pattern_generated',
+              metadata: {
+                aiReasoning: c.reasoning,
+                emailPattern: c.generatedEmail!.pattern,
+                patternConfidence: c.generatedEmail!.confidence,
+                fallbackTier: 'pattern_generation',
+              }
+            }))
+
+            // Save to database
+            const { data: savedContacts, error: saveError } = await supabase
+              .from('contacts')
+              .insert(patternContacts)
+              .select()
+
+            if (saveError) {
+              console.error('Error saving pattern-generated contacts:', saveError)
+            }
+
+            // Calculate cost (pattern generation used ~2 verifications per contact)
+            const verificationsUsed = validEmails.length * 2 // Estimate
+            const totalCreditCost = verificationsUsed
+
+            if (user.credits < totalCreditCost) {
+              return NextResponse.json(
+                {
+                  error: 'Insufficient credits',
+                  message: `Found ${validEmails.length} contacts via pattern generation (${totalCreditCost} credits required). You have ${user.credits} credits.`,
+                  contactsFound: validEmails.length,
+                  creditsRequired: totalCreditCost,
+                },
+                { status: 402 }
+              )
+            }
+
+            // Deduct credits
+            await supabase
+              .from('users')
+              .update({ credits: user.credits - totalCreditCost })
+              .eq('id', user.id)
+
+            await supabase.from('credit_transactions').insert({
+              user_id: user.id,
+              amount: -totalCreditCost,
+              type: 'contact_search',
+              description: `Pattern-generated emails for ${company} (${validEmails.length} contacts, ${verificationsUsed} verifications)`,
+              metadata: {
+                fallbackMode: true,
+                fallbackTier: 'pattern_generation',
+                contactsFound: validEmails.length,
+                verificationsUsed,
+              },
+            })
+
+            console.log(`💰 Pattern generation: ${totalCreditCost} credits for ${validEmails.length} contacts`)
+            console.log('=== Pattern Generation Fallback Complete ===')
+
+            return NextResponse.json({
+              success: true,
+              contacts: savedContacts || patternContacts,
+              creditsRemaining: user.credits - totalCreditCost,
+              creditsDeducted: totalCreditCost,
+              fallback_mode: true,
+              fallback_type: 'pattern_generated',
+              message: `Found ${validEmails.length} contacts via email pattern generation (verified emails).`,
+              strategy: {
+                reasoning: strategy.reasoning,
+                confidence: strategy.confidenceScore,
+                approach: strategy.approach,
+              },
+            })
+          } else {
+            console.log('⚠️ Pattern generation found no valid emails - trying LinkedIn-only fallback')
+          }
+        } catch (error) {
+          console.error('Pattern generation failed:', error)
+          console.log('🔄 Falling back to LinkedIn-only mode')
+        }
+      }
+
+      // FALLBACK TIER 2: Use LinkedIn-inferred contacts (NO VERIFIED EMAILS)
       if (linkedInContacts && linkedInContacts.length > 0) {
         console.log(`✅ Using ${linkedInContacts.length} LinkedIn-inferred contacts (FREE)`)
 
