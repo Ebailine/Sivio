@@ -1,37 +1,44 @@
+/**
+ * AI-Powered Contact Search API
+ * Uses Claude AI to minimize Snov.io credit usage while maximizing contact quality
+ */
+
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { snovClient } from '@/lib/snov/client'
+import { contactReasoner } from '@/lib/services/contact-reasoner'
 
 const CREDIT_COST = 1
 
 export async function POST(request: Request) {
-  console.log('=== Contact Search API Called ===')
+  console.log('=== AI-Powered Contact Search Started ===')
 
   try {
     const { userId } = await auth()
-    console.log('User ID:', userId)
-
     if (!userId) {
       console.error('No user ID - unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    console.log('Request body:', body)
+    console.log('Request body:', {
+      company: body.company,
+      jobTitle: body.jobTitle,
+      jobType: body.jobType,
+      hasDescription: !!body.jobDescription,
+    })
 
-    const { company, domain, jobId } = body
+    const { company, domain, jobId, jobTitle, jobType, jobDescription, location } = body
 
-    if (!company && !domain) {
-      console.error('Missing company and domain')
+    if (!company) {
       return NextResponse.json(
-        { error: 'Company name or domain required' },
+        { error: 'Company name required' },
         { status: 400 }
       )
     }
 
     const supabase = createAdminClient()
-    console.log('Supabase client created')
 
     // Get user from database
     const { data: user, error: userError } = await supabase
@@ -39,9 +46,6 @@ export async function POST(request: Request) {
       .select('id, credits, email')
       .eq('clerk_id', userId)
       .single()
-
-    console.log('User from DB:', user)
-    console.log('User error:', userError)
 
     if (userError || !user) {
       console.error('User not found in database:', userError)
@@ -57,38 +61,49 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'Insufficient credits',
-          message: `You need at least ${CREDIT_COST} credit(s). You have ${user.credits}.`,
+          message: `You need ${CREDIT_COST} credit. You have ${user.credits}.`,
+          creditsRequired: CREDIT_COST,
+          creditsAvailable: user.credits,
         },
         { status: 402 }
       )
     }
 
-    // Determine domain to search
-    let searchDomain = domain
-    if (!searchDomain && company) {
-      // Simple domain extraction
-      const companyKey = company.toLowerCase().replace(/[^a-z0-9]/g, '')
-
-      // Known company domain mappings (for companies with multiple domains or non-standard domains)
-      const domainMappings: Record<string, string[]> = {
-        'meta': ['facebook.com', 'meta.com'],
-        'facebook': ['facebook.com'],
-        'alphabet': ['google.com', 'alphabet.com'],
-        'twitter': ['x.com', 'twitter.com'],
-        'x': ['x.com', 'twitter.com'],
-      }
-
-      // Check if company has known alternative domains
-      if (domainMappings[companyKey]) {
-        searchDomain = domainMappings[companyKey][0] // Use first alternative
-      } else {
-        searchDomain = companyKey + '.com'
-      }
+    // STEP 1: AI analyzes job and creates strategy
+    console.log('Step 1: AI analyzing job...')
+    const jobContext = {
+      title: jobTitle || 'Position',
+      company,
+      companyUrl: domain,
+      description: jobDescription,
+      jobType: jobType || 'full-time',
+      location,
     }
 
-    console.log('Searching domain:', searchDomain)
+    const strategy = await contactReasoner.analyzeJob(jobContext)
+    console.log('Strategy confidence:', strategy.confidenceScore)
 
-    // Check if we have cached results (within 30 days)
+    // If confidence too low, ask user for more info
+    if (strategy.confidenceScore < 60) {
+      return NextResponse.json(
+        {
+          error: 'Need more information',
+          message: 'The AI needs more details about this job to find the right contacts. Please provide a job description or try a different company.',
+          needsMoreInfo: true,
+        },
+        { status: 400 }
+      )
+    }
+
+    // STEP 2: Research company
+    console.log('Step 2: Researching company...')
+    const companyInfo = await contactReasoner.researchCompany(company, domain)
+    const searchDomain = companyInfo.verifiedDomain
+
+    console.log('Verified domain:', searchDomain)
+
+    // STEP 3: Check cache first (high-quality contacts only)
+    console.log('Step 3: Checking cache...')
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -97,33 +112,35 @@ export async function POST(request: Request) {
       .select('*')
       .eq('company_domain', searchDomain)
       .gte('created_at', thirtyDaysAgo.toISOString())
+      .gte('relevance_score', 70) // Only high-quality cached contacts
       .order('relevance_score', { ascending: false })
-      .limit(10)
+      .limit(4)
 
-    console.log('Cached contacts found:', cachedContacts?.length || 0)
-
-    if (cachedContacts && cachedContacts.length > 0) {
-      console.log('Returning cached contacts (no credit charge)')
+    if (cachedContacts && cachedContacts.length >= 2) {
+      console.log(`Using ${cachedContacts.length} cached contacts (no charge)`)
       return NextResponse.json({
         success: true,
         contacts: cachedContacts,
         creditsRemaining: user.credits,
+        remainingCredits: user.credits,
         cached: true,
-        message: 'Using cached results from previous search',
+        creditsDeducted: 0,
+        strategy: {
+          reasoning: strategy.reasoning,
+          confidence: strategy.confidenceScore,
+          approach: strategy.approach,
+        },
       })
     }
 
-    // No cached results, search Snov.io
-    console.log('No cached results, calling Snov.io API...')
-    console.log('Snov.io credentials check:', {
-      hasUserId: !!process.env.SNOV_USER_ID,
-      hasSecret: !!process.env.SNOV_CLIENT_SECRET,
-    })
+    // STEP 4: Execute optimized Snov.io search
+    console.log('Step 4: Searching Snov.io with AI strategy...')
+    console.log('Target titles:', strategy.targetTitles)
 
     let snovResults
     try {
       snovResults = await snovClient.searchByDomain(searchDomain, 50)
-      console.log('Snov.io raw results:', snovResults?.length || 0)
+      console.log(`Snov.io returned ${snovResults?.length || 0} raw contacts`)
     } catch (snovError: any) {
       console.error('Snov.io API error:', snovError)
       return NextResponse.json(
@@ -141,7 +158,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'No contacts found',
-          message: `No contacts found for ${company || searchDomain}.
+          message: `No contacts found for ${company}.
 
 This can happen when:
 • The company doesn't have publicly available contact information
@@ -154,55 +171,80 @@ Try searching for smaller companies or startups that typically have more public 
       )
     }
 
-    // Filter and score contacts
-    console.log('Filtering contacts...')
-    const relevantContacts = snovResults
-      .filter(email => {
-        // Filter out generic emails
-        const genericPrefixes = ['info', 'support', 'hello', 'contact', 'admin', 'sales']
-        const emailPrefix = email.email.split('@')[0].toLowerCase()
-        return !genericPrefixes.some(prefix => emailPrefix.includes(prefix))
-      })
-      .map(email => {
-        // Calculate relevance score
-        let score = 50 // Base score
-        const position = (email.position || '').toLowerCase()
+    // Pre-filter obvious bad contacts
+    const preFiltered = snovResults.filter(contact => {
+      const email = contact.email?.toLowerCase() || ''
+      const genericPrefixes = [
+        'info@', 'support@', 'hello@', 'contact@', 'sales@', 'admin@',
+        'service@', 'help@', 'team@', 'office@', 'general@', 'marketing@',
+        'press@', 'media@', 'noreply@', 'automated@', 'express@', 'response@',
+      ]
+      return !genericPrefixes.some(prefix => email.startsWith(prefix))
+    })
 
-        // High relevance positions
-        if (position.includes('recruit') || position.includes('talent') || position.includes('hr')) {
-          score += 30
-        }
-        if (position.includes('head') || position.includes('director') || position.includes('manager')) {
-          score += 15
-        }
-        if (position.includes('senior') || position.includes('lead')) {
-          score += 10
-        }
+    console.log(`Pre-filtered from ${snovResults.length} to ${preFiltered.length} contacts`)
 
-        return {
-          ...email,
-          relevance_score: Math.min(score, 100),
-          is_key_decision_maker: score >= 80,
-        }
-      })
-      .sort((a, b) => b.relevance_score - a.relevance_score)
-      .slice(0, 10) // Top 10
+    if (preFiltered.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'No quality contacts found',
+          message: `Found ${snovResults.length} contacts but all were generic emails (info@, support@, etc.). This company may not have individual contact information available.`,
+        },
+        { status: 404 }
+      )
+    }
 
-    console.log('Filtered contacts:', relevantContacts.length)
+    // Format for AI
+    const formattedContacts = preFiltered.map(c => ({
+      email: c.email,
+      first_name: c.firstName,
+      last_name: c.lastName,
+      full_name: [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Unknown',
+      position: c.position,
+      email_status: c.status || 'unverified',
+    }))
 
-    // Save to database
-    const contactsToSave = relevantContacts.map(contact => ({
+    // STEP 5: AI ranks and filters to top 1-4
+    console.log('Step 5: AI ranking contacts...')
+    const rankedContacts = await contactReasoner.rankContacts(
+      formattedContacts,
+      jobContext,
+      strategy
+    )
+
+    if (rankedContacts.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'No relevant contacts found',
+          message: `Found ${preFiltered.length} contacts but the AI determined none were highly relevant to this ${jobTitle || 'position'}. They may not have the right roles for this job application.`,
+        },
+        { status: 404 }
+      )
+    }
+
+    console.log(`AI selected ${rankedContacts.length} top contacts`)
+
+    // STEP 6: Save to database with AI analysis
+    const contactsToSave = rankedContacts.map(contact => ({
       email: contact.email,
-      first_name: contact.firstName,
-      last_name: contact.lastName,
-      full_name: [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Unknown',
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      full_name: contact.full_name,
       position: contact.position,
-      company_name: company || searchDomain,
+      company_name: company,
       company_domain: searchDomain,
-      email_status: contact.status || 'unverified',
-      relevance_score: contact.relevance_score,
-      is_key_decision_maker: contact.is_key_decision_maker,
+      email_status: contact.email_status,
+      relevance_score: contact.analysis.relevanceScore,
+      is_key_decision_maker: contact.analysis.relevanceScore >= 85,
+      department: strategy.targetDepartments[0] || null,
       source: 'snov.io',
+      metadata: {
+        aiReasoning: contact.analysis.reasoning,
+        keyStrengths: contact.analysis.keyStrengths,
+        strategyReasoning: strategy.reasoning,
+        strategyConfidence: strategy.confidenceScore,
+        strategyApproach: strategy.approach,
+      },
     }))
 
     console.log('Saving contacts to database...')
@@ -213,12 +255,12 @@ Try searching for smaller companies or startups that typically have more public 
 
     if (saveError) {
       console.error('Error saving contacts:', saveError)
-      // Don't fail the request, just log it
+      // Continue anyway - we'll return the contacts even if saving failed
     } else {
       console.log('Contacts saved:', savedContacts?.length)
     }
 
-    // Deduct credit
+    // STEP 7: Deduct credit and log
     console.log('Deducting credit...')
     const { error: creditError } = await supabase
       .from('users')
@@ -229,20 +271,33 @@ Try searching for smaller companies or startups that typically have more public 
       console.error('Error updating credits:', creditError)
     }
 
-    // Log transaction
     await supabase.from('credit_transactions').insert({
       user_id: user.id,
       amount: -CREDIT_COST,
       type: 'contact_search',
-      description: `Contact search for ${company || searchDomain}`,
+      description: `AI-powered search for ${company}`,
+      metadata: {
+        strategy: strategy.reasoning,
+        confidence: strategy.confidenceScore,
+        approach: strategy.approach,
+        contactsFound: rankedContacts.length,
+      },
     })
 
-    console.log('=== Contact Search Success ===')
+    console.log('=== AI Contact Search Complete ===')
     return NextResponse.json({
       success: true,
-      contacts: savedContacts || relevantContacts,
+      contacts: savedContacts || contactsToSave,
       creditsRemaining: user.credits - CREDIT_COST,
+      remainingCredits: user.credits - CREDIT_COST,
+      creditsDeducted: CREDIT_COST,
       cached: false,
+      strategy: {
+        reasoning: strategy.reasoning,
+        confidence: strategy.confidenceScore,
+        approach: strategy.approach,
+        targetTitles: strategy.targetTitles,
+      },
     })
 
   } catch (error: any) {

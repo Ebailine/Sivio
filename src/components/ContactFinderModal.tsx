@@ -26,6 +26,10 @@ interface ContactFinderModalProps {
   jobId?: string
   companyName: string
   companyDomain?: string
+  jobTitle?: string
+  jobDescription?: string
+  jobType?: string
+  location?: string
   userCredits: number
   onCreditsUpdate?: (newCredits: number) => void
 }
@@ -36,6 +40,10 @@ export default function ContactFinderModal({
   jobId,
   companyName,
   companyDomain,
+  jobTitle,
+  jobDescription,
+  jobType,
+  location,
   userCredits,
   onCreditsUpdate
 }: ContactFinderModalProps) {
@@ -46,6 +54,7 @@ export default function ContactFinderModal({
   const [searchComplete, setSearchComplete] = useState(false)
   const [cached, setCached] = useState(false)
   const [creditsDeducted, setCreditsDeducted] = useState(0)
+  const [strategy, setStrategy] = useState<any>(null)
 
   const CREDIT_COST = 1
 
@@ -97,7 +106,11 @@ export default function ContactFinderModal({
         body: JSON.stringify({
           domain: companyDomain,
           company: companyName,
-          jobId
+          jobId,
+          jobTitle,
+          jobDescription,
+          jobType,
+          location
         })
       })
 
@@ -120,6 +133,7 @@ export default function ContactFinderModal({
       setContacts(data.contacts)
       setCached(data.cached || false)
       setCreditsDeducted(data.creditsDeducted || 0)
+      setStrategy(data.strategy || null)
       setSearchComplete(true)
 
       // Update user credits
@@ -154,6 +168,7 @@ export default function ContactFinderModal({
     setSearchComplete(false)
     setCached(false)
     setCreditsDeducted(0)
+    setStrategy(null)
     onClose()
   }
 
@@ -263,20 +278,40 @@ export default function ContactFinderModal({
               </div>
             )}
 
-            {/* Success Message */}
+            {/* Success Message with AI Insights */}
             {searchComplete && !error && (
               <div className={`border rounded-lg p-4 mb-6 ${cached ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className={cached ? 'text-green-600' : 'text-blue-600'} size={20} />
-                  <div>
-                    <p className={`text-sm font-medium ${cached ? 'text-green-900' : 'text-blue-900'}`}>
-                      {cached ? 'Using cached results' : `Found ${contacts.length} contacts`}
-                    </p>
-                    <p className={`text-xs mt-1 ${cached ? 'text-green-700' : 'text-blue-700'}`}>
+                  <CheckCircle2 className={cached ? 'text-green-600 flex-shrink-0' : 'text-blue-600 flex-shrink-0'} size={24} />
+                  <div className="flex-1">
+                    <h3 className={`text-sm font-semibold ${cached ? 'text-green-900' : 'text-blue-900'} mb-1`}>
+                      {cached ? 'Using Cached Results' : `AI Found ${contacts.length} High-Quality Contact${contacts.length !== 1 ? 's' : ''}!`}
+                    </h3>
+                    <p className={`text-xs ${cached ? 'text-green-800' : 'text-blue-800'}`}>
                       {cached
                         ? 'These contacts were found recently (no credits charged)'
-                        : `${creditsDeducted} credit deducted. Remaining: ${userCredits - creditsDeducted} credits`}
+                        : strategy?.reasoning || `AI analyzed the job and identified the best contacts at ${companyName}.`}
                     </p>
+                    {!cached && strategy && (
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="bg-white/50 px-2 py-1 rounded">
+                          Confidence: {strategy.confidence}%
+                        </span>
+                        <span className="bg-white/50 px-2 py-1 rounded capitalize">
+                          {strategy.approach?.replace('-', ' ')}
+                        </span>
+                        {creditsDeducted > 0 && (
+                          <span className="bg-white/50 px-2 py-1 rounded">
+                            {creditsDeducted} credit deducted
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {cached && (
+                      <p className="text-xs text-green-700 mt-1">
+                        No credits charged
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

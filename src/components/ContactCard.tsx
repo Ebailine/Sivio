@@ -16,6 +16,11 @@ interface Contact {
   relevance_score: number
   is_key_decision_maker: boolean
   department: string | null
+  metadata?: {
+    aiReasoning?: string
+    keyStrengths?: string[]
+    strategyReasoning?: string
+  }
 }
 
 interface ContactCardProps {
@@ -123,6 +128,23 @@ export default function ContactCard({ contact, onSelect, isSelected = false }: C
             <Linkedin size={14} />
             <span>View LinkedIn</span>
           </a>
+        </div>
+      )}
+
+      {/* AI Reasoning */}
+      {contact.metadata?.aiReasoning && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <p className="text-xs font-semibold text-gray-700 mb-1.5">Why this contact:</p>
+          <p className="text-xs text-gray-600 leading-relaxed">{contact.metadata.aiReasoning}</p>
+          {contact.metadata?.keyStrengths && contact.metadata.keyStrengths.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {contact.metadata.keyStrengths.map((strength: string, i: number) => (
+                <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium">
+                  {strength}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
