@@ -106,14 +106,11 @@ export class AdzunaClient {
    * Get job categories for business roles
    */
   getBusinessCategories(): string[] {
+    // Only use categories that work with US Adzuna API
     return [
       'accounting-finance-jobs',
-      'hr-recruitment-jobs',
-      'marketing-advertising-pr-jobs',
       'sales-jobs',
-      'admin-secretarial-jobs',
       'consultancy-jobs',
-      'business-management-jobs',
       'graduate-jobs',
     ]
   }
