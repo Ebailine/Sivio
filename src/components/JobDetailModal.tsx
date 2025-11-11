@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck } from 'lucide-react'
+import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users } from 'lucide-react'
+import ContactFinderModal from './ContactFinderModal'
 
 interface Job {
   id: string
@@ -31,6 +32,8 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(isSaved)
+  const [showContactFinder, setShowContactFinder] = useState(false)
+  const [userCredits, setUserCredits] = useState(100)
 
   useEffect(() => {
     setSaved(isSaved)
@@ -39,6 +42,7 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
   useEffect(() => {
     if (jobId && isOpen) {
       fetchJob()
+      fetchUserCredits()
     }
   }, [jobId, isOpen])
 
@@ -66,6 +70,28 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
       setSaved(!saved)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const fetchUserCredits = async () => {
+    try {
+      const response = await fetch('/api/user/credits')
+      if (response.ok) {
+        const data = await response.json()
+        setUserCredits(data.credits || 100)
+      }
+    } catch (error) {
+      console.error('Failed to fetch user credits:', error)
+    }
+  }
+
+  const extractDomain = (url: string | null): string | undefined => {
+    if (!url) return undefined
+    try {
+      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`)
+      return urlObj.hostname.replace('www.', '')
+    } catch (error) {
+      return undefined
     }
   }
 
@@ -185,15 +211,24 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
                 {/* Apply Button */}
                 {job.url && (
                   <div className="pt-6 border-t border-gray-200">
-                    <a
-                      href={job.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                    >
-                      Apply on Company Website
-                      <ExternalLink size={18} />
-                    </a>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                      >
+                        Apply on Company Website
+                        <ExternalLink size={18} />
+                      </a>
+                      <button
+                        onClick={() => setShowContactFinder(true)}
+                        className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                      >
+                        <Users size={18} />
+                        Find Contacts
+                      </button>
+                    </div>
                     {job.source && (
                       <p className="mt-2 text-sm text-gray-500">Source: {job.source}</p>
                     )}
@@ -208,6 +243,19 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
           )}
         </div>
       </div>
+
+      {/* Contact Finder Modal */}
+      {job && (
+        <ContactFinderModal
+          isOpen={showContactFinder}
+          onClose={() => setShowContactFinder(false)}
+          jobId={job.id}
+          companyName={job.company}
+          companyDomain={extractDomain(job.url)}
+          userCredits={userCredits}
+          onCreditsUpdate={setUserCredits}
+        />
+      )}
     </div>
   )
 }
