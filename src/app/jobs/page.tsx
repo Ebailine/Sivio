@@ -5,8 +5,9 @@ import { useUser } from '@clerk/nextjs'
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import JobCard from '@/components/JobCard'
+import JobDataGrid from '@/components/JobDataGrid'
 import JobDetailModal from '@/components/JobDetailModal'
-import { Search, Filter, Briefcase } from 'lucide-react'
+import { Search, Filter, Briefcase, Grid3x3, List, ChevronDown } from 'lucide-react'
 
 interface Job {
   id: string
@@ -21,6 +22,7 @@ interface Job {
   remote: boolean
   posted_date: string | null
   source: string | null
+  category: string | null
 }
 
 export default function JobsPage() {
@@ -36,10 +38,14 @@ export default function JobsPage() {
   const [salaryMax, setSalaryMax] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalJobs, setTotalJobs] = useState(0)
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set())
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set())
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [syncStatus, setSyncStatus] = useState<any>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
+  const [perPage, setPerPage] = useState(50)
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -49,7 +55,7 @@ export default function JobsPage() {
 
   useEffect(() => {
     fetchJobs()
-  }, [search, jobType, remote, location, category, salaryMin, salaryMax, page])
+  }, [search, jobType, remote, location, category, salaryMin, salaryMax, page, perPage])
 
   useEffect(() => {
     fetchSyncStatus()
@@ -60,7 +66,7 @@ export default function JobsPage() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '12',
+        limit: perPage.toString(),
         ...(search && { search }),
         ...(jobType && { jobType }),
         ...(remote && { remote }),
@@ -75,6 +81,7 @@ export default function JobsPage() {
 
       setJobs(data.jobs || [])
       setTotalPages(data.pagination.totalPages)
+      setTotalJobs(data.pagination.total || 0)
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
@@ -148,6 +155,26 @@ export default function JobsPage() {
   const openJobDetail = (jobId: string) => {
     setSelectedJobId(jobId)
     setIsModalOpen(true)
+  }
+
+  const handleSelectJob = (jobId: string) => {
+    setSelectedJobIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId)
+      } else {
+        newSet.add(jobId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    setSelectedJobIds(new Set(jobs.map(job => job.id)))
+  }
+
+  const handleClearSelection = () => {
+    setSelectedJobIds(new Set())
   }
 
   return (
@@ -333,58 +360,162 @@ export default function JobsPage() {
           </div>
         )}
 
-        {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            {loading ? 'Loading...' : `Showing ${jobs.length} jobs`}
-          </p>
+        {/* View Controls */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <p className="text-gray-700 font-medium">
+              {loading ? 'Loading...' : (
+                <>
+                  Showing {((page - 1) * perPage) + 1}-{Math.min(page * perPage, totalJobs)} of {totalJobs.toLocaleString()} jobs
+                </>
+              )}
+            </p>
+            {selectedJobIds.size > 0 && (
+              <span className="text-sm text-blue-600 font-medium">
+                ({selectedJobIds.size} selected)
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Per Page Selector */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Show:</label>
+              <select
+                value={perPage}
+                onChange={(e) => {
+                  setPerPage(Number(e.target.value))
+                  setPage(1)
+                }}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <List size={16} />
+                Table
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Grid3x3 size={16} />
+                Grid
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Jobs Grid */}
+        {/* Loading State */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
-                <div className="h-5 bg-gray-200 rounded w-1/2 mb-4"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-full"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading jobs...</p>
           </div>
         ) : jobs.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {jobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  isSaved={savedJobIds.has(job.id)}
-                  onSave={user ? handleSave : undefined}
-                  onClick={() => openJobDetail(job.id)}
-                />
-              ))}
-            </div>
+            {/* Table View */}
+            {viewMode === 'table' ? (
+              <JobDataGrid
+                jobs={jobs}
+                selectedJobs={selectedJobIds}
+                onSelectJob={handleSelectJob}
+                onSelectAll={handleSelectAll}
+                onClearSelection={handleClearSelection}
+                onJobClick={openJobDetail}
+                onSaveJob={user ? handleSave : undefined}
+                savedJobIds={savedJobIds}
+              />
+            ) : (
+              /* Grid View */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {jobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    isSaved={savedJobIds.has(job.id)}
+                    onSave={user ? handleSave : undefined}
+                    onClick={() => openJobDetail(job.id)}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center gap-2">
+              <div className="flex justify-center items-center gap-2 mt-8">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
                 >
                   Previous
                 </button>
-                <span className="px-4 py-2 text-gray-700">
-                  Page {page} of {totalPages}
-                </span>
+                <div className="flex items-center gap-1">
+                  {page > 2 && (
+                    <>
+                      <button
+                        onClick={() => setPage(1)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                      >
+                        1
+                      </button>
+                      {page > 3 && <span className="px-2 text-gray-500">...</span>}
+                    </>
+                  )}
+                  {page > 1 && (
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                    >
+                      {page - 1}
+                    </button>
+                  )}
+                  <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                    {page}
+                  </button>
+                  {page < totalPages && (
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                    >
+                      {page + 1}
+                    </button>
+                  )}
+                  {page < totalPages - 1 && (
+                    <>
+                      {page < totalPages - 2 && <span className="px-2 text-gray-500">...</span>}
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
                 >
                   Next
                 </button>
@@ -392,16 +523,20 @@ export default function JobsPage() {
             )}
           </>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">No jobs found matching your criteria</p>
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <p className="text-gray-600 text-lg mb-4">No jobs found matching your criteria</p>
             <button
               onClick={() => {
                 setSearch('')
                 setJobType('')
                 setRemote('')
+                setLocation('')
+                setCategory('')
+                setSalaryMin('')
+                setSalaryMax('')
                 setPage(1)
               }}
-              className="mt-4 text-blue-600 hover:text-blue-700"
+              className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Clear all filters
             </button>
