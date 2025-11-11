@@ -68,7 +68,7 @@ class SnovClient {
   /**
    * Get OAuth access token (cached with expiry)
    */
-  private async getAccessToken(): Promise<string> {
+  async getAccessToken(): Promise<string> {
     // Return cached token if still valid
     if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
       return this.accessToken

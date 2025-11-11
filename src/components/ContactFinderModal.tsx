@@ -96,7 +96,7 @@ export default function ContactFinderModal({
         },
         body: JSON.stringify({
           domain: companyDomain,
-          companyName,
+          company: companyName,
           jobId
         })
       })
@@ -105,11 +105,14 @@ export default function ContactFinderModal({
 
       if (!response.ok) {
         if (response.status === 402) {
-          setError(`Insufficient credits. You need ${data.creditsRequired} credit but only have ${data.creditsAvailable}.`)
+          setError(data.message || `Insufficient credits. You need ${data.creditsRequired} credit but only have ${data.creditsAvailable}.`)
         } else if (response.status === 404) {
-          setError('No contacts found for this company. Try another company or check the domain.')
+          setError(data.message || 'No contacts found for this company. Try another company or check the domain.')
         } else {
-          setError(data.error || 'Failed to search for contacts')
+          // Use message field first, then error field, then default
+          const errorMsg = data.message || data.error || 'Failed to search for contacts'
+          const details = data.details ? `\n\nDetails: ${data.details}` : ''
+          setError(errorMsg + details)
         }
         return
       }
@@ -241,11 +244,20 @@ export default function ContactFinderModal({
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="text-red-600 mt-0.5" size={20} />
-                  <div>
-                    <p className="text-sm font-medium text-red-900">{error}</p>
+                  <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={24} />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-red-900 mb-1">
+                      Search Failed
+                    </h3>
+                    <p className="text-sm text-red-800 whitespace-pre-wrap">{error}</p>
+                    <button
+                      onClick={() => setError(null)}
+                      className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+                    >
+                      Dismiss
+                    </button>
                   </div>
                 </div>
               </div>

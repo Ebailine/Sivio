@@ -6,173 +6,237 @@ import { snovClient } from '@/lib/snov/client'
 const CREDIT_COST = 1
 
 export async function POST(request: Request) {
+  console.log('=== Contact Search API Called ===')
+
   try {
     const { userId } = await auth()
+    console.log('User ID:', userId)
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      console.error('No user ID - unauthorized')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { domain, companyName, jobId } = await request.json()
+    const body = await request.json()
+    console.log('Request body:', body)
 
-    if (!domain) {
+    const { company, domain, jobId } = body
+
+    if (!company && !domain) {
+      console.error('Missing company and domain')
       return NextResponse.json(
-        { error: 'Company domain required' },
+        { error: 'Company name or domain required' },
         { status: 400 }
       )
     }
 
     const supabase = createAdminClient()
+    console.log('Supabase client created')
 
-    // Get user from Supabase
+    // Get user from database
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, credits')
+      .select('id, credits, email')
       .eq('clerk_id', userId)
       .single()
 
+    console.log('User from DB:', user)
+    console.log('User error:', userError)
+
     if (userError || !user) {
+      console.error('User not found in database:', userError)
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User not found in database. Please try signing out and back in.' },
         { status: 404 }
       )
     }
 
-    // Check if user has enough credits
+    // Check credits
     if (user.credits < CREDIT_COST) {
+      console.error('Insufficient credits:', user.credits)
       return NextResponse.json(
-        { error: 'Insufficient credits', creditsRequired: CREDIT_COST, creditsAvailable: user.credits },
+        {
+          error: 'Insufficient credits',
+          message: `You need at least ${CREDIT_COST} credit(s). You have ${user.credits}.`,
+        },
         { status: 402 }
       )
     }
 
-    // Check if we already have contacts for this domain (within last 30 days)
+    // Determine domain to search
+    let searchDomain = domain
+    if (!searchDomain && company) {
+      // Simple domain extraction
+      searchDomain = company
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+      searchDomain = searchDomain + '.com'
+    }
+
+    console.log('Searching domain:', searchDomain)
+
+    // Check if we have cached results (within 30 days)
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const { data: existingContacts } = await supabase
+    const { data: cachedContacts } = await supabase
       .from('contacts')
       .select('*')
-      .eq('company_domain', domain)
+      .eq('company_domain', searchDomain)
       .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('relevance_score', { ascending: false })
+      .limit(10)
 
-    // If we have recent contacts, return them without charging
-    if (existingContacts && existingContacts.length > 0) {
+    console.log('Cached contacts found:', cachedContacts?.length || 0)
+
+    if (cachedContacts && cachedContacts.length > 0) {
+      console.log('Returning cached contacts (no credit charge)')
       return NextResponse.json({
         success: true,
-        contacts: existingContacts,
+        contacts: cachedContacts,
+        creditsRemaining: user.credits,
         cached: true,
-        creditsDeducted: 0,
-        remainingCredits: user.credits
+        message: 'Using cached results from previous search',
       })
     }
 
-    // Search for contacts using Snov.io
-    let contacts
+    // No cached results, search Snov.io
+    console.log('No cached results, calling Snov.io API...')
+    console.log('Snov.io credentials check:', {
+      hasUserId: !!process.env.SNOV_USER_ID,
+      hasSecret: !!process.env.SNOV_CLIENT_SECRET,
+    })
+
+    let snovResults
     try {
-      contacts = await snovClient.findRelevantContacts(domain, companyName)
-    } catch (error: any) {
+      snovResults = await snovClient.searchByDomain(searchDomain, 50)
+      console.log('Snov.io raw results:', snovResults?.length || 0)
+    } catch (snovError: any) {
+      console.error('Snov.io API error:', snovError)
       return NextResponse.json(
-        { error: 'Failed to search contacts', details: error.message },
+        {
+          error: 'Failed to search Snov.io',
+          message: snovError.message || 'Snov.io API is not responding. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? snovError.toString() : undefined,
+        },
         { status: 500 }
       )
     }
 
-    if (contacts.length === 0) {
+    if (!snovResults || snovResults.length === 0) {
+      console.log('No contacts found from Snov.io')
       return NextResponse.json(
-        { error: 'No contacts found for this domain', contacts: [] },
+        {
+          error: 'No contacts found',
+          message: `No contacts found for ${company || searchDomain}. The company might not have publicly available contact information.`,
+        },
         { status: 404 }
       )
     }
 
-    // Deduct credits from user
+    // Filter and score contacts
+    console.log('Filtering contacts...')
+    const relevantContacts = snovResults
+      .filter(email => {
+        // Filter out generic emails
+        const genericPrefixes = ['info', 'support', 'hello', 'contact', 'admin', 'sales']
+        const emailPrefix = email.email.split('@')[0].toLowerCase()
+        return !genericPrefixes.some(prefix => emailPrefix.includes(prefix))
+      })
+      .map(email => {
+        // Calculate relevance score
+        let score = 50 // Base score
+        const position = (email.position || '').toLowerCase()
+
+        // High relevance positions
+        if (position.includes('recruit') || position.includes('talent') || position.includes('hr')) {
+          score += 30
+        }
+        if (position.includes('head') || position.includes('director') || position.includes('manager')) {
+          score += 15
+        }
+        if (position.includes('senior') || position.includes('lead')) {
+          score += 10
+        }
+
+        return {
+          ...email,
+          relevance_score: Math.min(score, 100),
+          is_key_decision_maker: score >= 80,
+        }
+      })
+      .sort((a, b) => b.relevance_score - a.relevance_score)
+      .slice(0, 10) // Top 10
+
+    console.log('Filtered contacts:', relevantContacts.length)
+
+    // Save to database
+    const contactsToSave = relevantContacts.map(contact => ({
+      email: contact.email,
+      first_name: contact.firstName,
+      last_name: contact.lastName,
+      full_name: [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Unknown',
+      position: contact.position,
+      company_name: company || searchDomain,
+      company_domain: searchDomain,
+      email_status: contact.status || 'unverified',
+      relevance_score: contact.relevance_score,
+      is_key_decision_maker: contact.is_key_decision_maker,
+      source: 'snov.io',
+    }))
+
+    console.log('Saving contacts to database...')
+    const { data: savedContacts, error: saveError } = await supabase
+      .from('contacts')
+      .insert(contactsToSave)
+      .select()
+
+    if (saveError) {
+      console.error('Error saving contacts:', saveError)
+      // Don't fail the request, just log it
+    } else {
+      console.log('Contacts saved:', savedContacts?.length)
+    }
+
+    // Deduct credit
+    console.log('Deducting credit...')
     const { error: creditError } = await supabase
       .from('users')
       .update({ credits: user.credits - CREDIT_COST })
       .eq('id', user.id)
 
     if (creditError) {
-      console.error('Failed to deduct credits:', creditError)
-      return NextResponse.json(
-        { error: 'Failed to process credit transaction' },
-        { status: 500 }
-      )
+      console.error('Error updating credits:', creditError)
     }
 
-    // Log the transaction
-    const { error: transactionError } = await supabase
-      .from('credit_transactions')
-      .insert({
-        user_id: user.id,
-        amount: -CREDIT_COST,
-        type: 'contact_search',
-        description: `Contact search for ${domain}`,
-        metadata: {
-          domain,
-          companyName,
-          jobId,
-          contactsFound: contacts.length
-        }
-      })
+    // Log transaction
+    await supabase.from('credit_transactions').insert({
+      user_id: user.id,
+      amount: -CREDIT_COST,
+      type: 'contact_search',
+      description: `Contact search for ${company || searchDomain}`,
+    })
 
-    if (transactionError) {
-      console.error('Failed to log transaction:', transactionError)
-      // Don't fail the request if logging fails
-    }
-
-    // Store contacts in database
-    const contactsToInsert = contacts.map(contact => ({
-      email: contact.email,
-      first_name: contact.firstName,
-      last_name: contact.lastName,
-      full_name: contact.fullName,
-      position: contact.position,
-      company_name: companyName || domain,
-      company_domain: domain,
-      linkedin_url: contact.linkedinUrl,
-      email_status: contact.emailStatus,
-      relevance_score: contact.relevanceScore,
-      is_key_decision_maker: contact.isKeyDecisionMaker,
-      department: contact.department,
-      source: 'snov.io',
-      metadata: {
-        job_id: jobId
-      }
-    }))
-
-    const { data: insertedContacts, error: insertError } = await supabase
-      .from('contacts')
-      .insert(contactsToInsert)
-      .select()
-
-    if (insertError) {
-      console.error('Failed to store contacts:', insertError)
-      // Return the contacts even if storage fails
-      return NextResponse.json({
-        success: true,
-        contacts: contactsToInsert,
-        cached: false,
-        creditsDeducted: CREDIT_COST,
-        remainingCredits: user.credits - CREDIT_COST,
-        warning: 'Contacts found but not stored in database'
-      })
-    }
-
+    console.log('=== Contact Search Success ===')
     return NextResponse.json({
       success: true,
-      contacts: insertedContacts,
+      contacts: savedContacts || relevantContacts,
+      creditsRemaining: user.credits - CREDIT_COST,
       cached: false,
-      creditsDeducted: CREDIT_COST,
-      remainingCredits: user.credits - CREDIT_COST
     })
 
   } catch (error: any) {
-    console.error('Contact search error:', error)
+    console.error('=== Contact Search Error ===')
+    console.error('Error type:', error.constructor.name)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
+
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      {
+        error: 'Contact search failed',
+        message: error.message || 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? error.toString() : undefined,
+      },
       { status: 500 }
     )
   }
