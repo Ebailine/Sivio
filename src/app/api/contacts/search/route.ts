@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       companyResearch: companyData,
     } : undefined
 
-    if (enhancedContext) {
+    if (enhancedContext && companyData) {
       console.log(`✅ Using enhanced context: ${companyData.teamMembers.length} team members, ${companyData.departments.length} depts`)
     } else {
       console.log('⚠️  No enhanced context - using basic job info only')
