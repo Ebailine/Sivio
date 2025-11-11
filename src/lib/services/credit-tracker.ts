@@ -137,15 +137,21 @@ class CreditTracker {
     estimatedCredits: number
     expectedContacts: number
     reasoning: string
+    estimatedCostUSD: number
   } {
     // Domain Search is almost always most efficient
     // 1 credit = up to 50 emails vs 1 credit per email in prospect search
+
+    // User's actual pricing: Starter plan = $29.25/month for 1,000 credits
+    // Cost per credit = $0.029 (2.9 cents)
+    const COST_PER_CREDIT_USD = 0.029
 
     return {
       method: 'domain_search',
       estimatedCredits: 1,
       expectedContacts: 4,
       reasoning: 'Domain Search: 1 credit for up to 50 emails. Most cost-effective for all company sizes. AI filters to top 4 after retrieval.',
+      estimatedCostUSD: 1 * COST_PER_CREDIT_USD, // $0.029 per search
     }
   }
 }

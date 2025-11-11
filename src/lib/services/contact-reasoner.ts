@@ -328,38 +328,51 @@ ${contactList}
 
 CRITICAL RANKING RULES - FOLLOW EXACTLY:
 
-1. HR/RECRUITING CONTACTS GET HIGHEST SCORES (90-100):
+IMPORTANT: NEVER return zero contacts. It's better to return SOME contacts than NONE.
+
+1. HR/RECRUITING CONTACTS GET HIGHEST SCORES (85-100):
    - Titles containing: "Recruiter", "Talent Acquisition", "HR", "Human Resources", "People Operations"
    - These people ACTUALLY review applications and schedule interviews
    - ALWAYS rank these highest, even if they're junior level
+   - Examples: "HR Manager" = 95, "Recruiter" = 90, "People Ops" = 85
 
-2. TEAM/DEPARTMENT CONTACTS GET MEDIUM SCORES (70-85):
-   - Hiring managers, team leads, VPs related to the role
-   - Examples: "Engineering Manager", "Sales Director", "Broker"
-   - Only rank high if they match the job department
+2. TEAM/DEPARTMENT CONTACTS GET GOOD SCORES (60-85):
+   - People in the SAME ROLE as the job (e.g., "Financial Advisor" for Financial Advisor role)
+   - Hiring managers, team leads, managers related to the role
+   - Branch managers, office managers, department heads
+   - Examples:
+     * "Financial Advisor" for Financial Advisor role = 75-80
+     * "Engineering Manager" for engineer role = 70-75
+     * "Sales Manager" for sales role = 70-75
+     * "Branch Manager" = 65-70
 
-3. AUTOMATIC EXCLUSIONS (score below 60):
-   - Generic roles: "CEO", "CFO", "President" (unless small company)
-   - Unrelated departments
-   - Administrative staff not involved in hiring
+3. ACCEPTABLE CONTACTS (50-65):
+   - Directors, VPs in related departments
+   - Senior team members who might know about hiring
+   - Office administrators at smaller companies
+   - Anyone who works at the company and might help
 
-4. SCORING EXAMPLES:
-   - "HR Manager" = 95-100 (reviews all applications)
-   - "Recruiter" = 90-95 (schedules interviews)
-   - "Engineering Manager" for engineer role = 80-85 (hiring decision)
-   - "Broker" for sales role = 75-80 (team lead)
-   - "CEO" of large company = 50 (too senior, skip)
+4. ONLY EXCLUDE IF CLEARLY IRRELEVANT (below 50):
+   - CEO of large company (500+ employees) = 45
+   - Completely unrelated department (e.g., "Chef" for tech role) = 40
+   - Generic/support emails = 30
 
-Return top 4 contacts. MUST include at least 2 HR/recruiting if available.
+PRAGMATIC APPROACH:
+- If you find HR/recruiting contacts → prioritize them
+- If NO HR contacts → accept team members in the same role
+- If ONLY executives → include them anyway (better than nothing)
+- NEVER return an empty list if contacts exist
+
+Return ALL contacts ranked by relevance. Mark ALL as "include" unless clearly irrelevant (score < 50).
 
 Return ONLY valid JSON array (no markdown, no explanations):
 [
   {
     "contactIndex": 0,
-    "relevanceScore": 95,
-    "reasoning": "HR Manager - directly reviews applications and schedules interviews",
+    "relevanceScore": 75,
+    "reasoning": "Financial Advisor - same role, can provide insights on hiring process",
     "recommendedAction": "include",
-    "keyStrengths": ["Reviews applications", "Schedules interviews"]
+    "keyStrengths": ["Same role", "Knows hiring process"]
   }
 ]`
 
@@ -389,7 +402,7 @@ Return ONLY valid JSON array (no markdown, no explanations):
     const rankings: ContactAnalysis[] = JSON.parse(jsonText)
 
     // Map rankings back to contacts
-    const rankedContacts = rankings
+    let rankedContacts = rankings
       .filter(r => r.recommendedAction === 'include')
       .map(r => ({
         ...contacts[r.contactIndex],
@@ -397,6 +410,25 @@ Return ONLY valid JSON array (no markdown, no explanations):
       }))
       .sort((a, b) => b.analysis.relevanceScore - a.analysis.relevanceScore)
       .slice(0, 4) // Top 4 only
+
+    // FALLBACK: If AI returned 0 contacts but we have contacts, use them anyway
+    if (rankedContacts.length === 0 && contacts.length > 0) {
+      console.warn('⚠️  AI returned 0 contacts - using fallback to include all available contacts')
+
+      // Use ALL contacts with a default analysis
+      rankedContacts = contacts.slice(0, 4).map((contact, index) => ({
+        ...contact,
+        analysis: {
+          contactIndex: index,
+          relevanceScore: 60, // Acceptable score
+          reasoning: `Contact at ${job.company} - better to reach out than skip`,
+          recommendedAction: 'include' as const,
+          keyStrengths: ['Works at target company', 'May have hiring insights'],
+        },
+      }))
+
+      console.log(`✅ Fallback: Returning ${rankedContacts.length} contacts with default analysis`)
+    }
 
     console.log(`AI ranked ${rankedContacts.length} top contacts from ${contacts.length} candidates`)
     return rankedContacts
