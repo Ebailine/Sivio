@@ -62,41 +62,88 @@ export async function POST(request: Request) {
 
     // Note: We'll check credits after finding contacts, charging per contact found
 
-    // NEW STEP 0: Analyze job if we have the URL
+    // STEP 0: MANDATORY - Analyze full job posting URL
+    console.log('=== Step 0: Fetching Full Job Details ===')
     let jobAnalysis = null
     let companyData = null
+    let fullJobUrl = null
 
+    // First, get the job from database
     if (jobId) {
-      try {
-        // Fetch job details
-        const { data: job } = await supabase
-          .from('jobs')
-          .select('*')
-          .eq('id', jobId)
-          .single()
+      const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('id', jobId)
+        .single()
 
-        if (job?.url) {
-          console.log('Step 0a: Analyzing job posting...')
-          jobAnalysis = await jobAnalyzer.quickAnalyze({
-            title: job.title,
-            company: job.company,
-            location: job.location,
-            description: job.description || '',
-            url: job.url,
-          })
-
-          console.log('Step 0b: Researching company...')
-          companyData = await companyResearcher.researchCompany(
-            jobAnalysis.company.domain,
-            jobAnalysis.company.name
-          )
-
-          console.log(`Enhanced context: ${companyData.teamMembers.length} team members, ${companyData.departments.length} depts`)
-        }
-      } catch (error) {
-        console.error('Error in enhanced job analysis:', error)
-        // Continue without enhanced data
+      if (jobError || !job) {
+        console.error('Job not found in database:', jobError)
+        return NextResponse.json(
+          { error: 'Job not found. Please refresh and try again.' },
+          { status: 404 }
+        )
       }
+
+      fullJobUrl = job.url
+
+      if (!fullJobUrl) {
+        console.error('⚠️  Job has no URL - cannot fetch full details')
+        return NextResponse.json(
+          {
+            error: 'Job posting URL missing',
+            message: 'This job does not have a valid application URL. Cannot find contacts without full job details.',
+          },
+          { status: 400 }
+        )
+      }
+
+      console.log('📄 Job URL:', fullJobUrl)
+      console.log('💰 Cost optimization: Fetching full job details BEFORE using Snov.io credits')
+
+      try {
+        // Analyze the full job posting
+        console.log('Step 0a: Analyzing full job posting from URL...')
+        jobAnalysis = await jobAnalyzer.quickAnalyze({
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          description: job.description || '',
+          url: fullJobUrl,
+        })
+
+        console.log('✅ Job analysis complete:')
+        console.log(`   - Company domain: ${jobAnalysis.company.domain}`)
+        console.log(`   - Industry: ${jobAnalysis.company.industry || 'Unknown'}`)
+        console.log(`   - Department: ${jobAnalysis.department}`)
+        console.log(`   - Seniority: ${jobAnalysis.seniority}`)
+
+        // Research the company deeply
+        console.log('Step 0b: Deep company research...')
+        companyData = await companyResearcher.researchCompany(
+          jobAnalysis.company.domain,
+          jobAnalysis.company.name
+        )
+
+        console.log(`✅ Company research complete:`)
+        console.log(`   - ${companyData.teamMembers.length} team members identified`)
+        console.log(`   - ${companyData.departments.length} departments mapped`)
+        console.log(`   - ${companyData.officeLocations.length} office locations`)
+
+      } catch (error: any) {
+        console.error('❌ Job analysis failed:', error.message)
+        return NextResponse.json(
+          {
+            error: 'Failed to analyze job posting',
+            message: `Could not fetch or analyze the full job posting. This may be due to the job URL being unavailable or protected. Error: ${error.message}`,
+            details: process.env.NODE_ENV === 'development' ? error.toString() : undefined,
+          },
+          { status: 500 }
+        )
+      }
+    } else {
+      // No jobId provided - user is doing manual search
+      console.log('⚠️  No jobId provided - using manual company/domain input')
+      console.log('⚠️  Results may be less accurate without full job posting analysis')
     }
 
     // STEP 1: AI analyzes job and creates strategy
@@ -142,15 +189,24 @@ export async function POST(request: Request) {
       )
     }
 
-    // STEP 2: Research company
-    console.log('Step 2: Researching company...')
-    console.log('Input domain:', domain)
-    console.log('Input company name:', company)
+    // STEP 2: Determine search domain
+    console.log('=== Step 2: Determining Search Domain ===')
+    let searchDomain = domain
 
-    const companyInfo = await contactReasoner.researchCompany(company, domain)
-    const searchDomain = companyInfo.verifiedDomain
-
-    console.log('✅ Verified domain for search:', searchDomain)
+    if (jobAnalysis && jobAnalysis.company.domain) {
+      // Use the domain from deep job analysis (most accurate)
+      searchDomain = jobAnalysis.company.domain
+      console.log(`✅ Using domain from job analysis: ${searchDomain}`)
+    } else if (domain) {
+      // Use manually provided domain
+      console.log(`⚠️  Using manually provided domain: ${searchDomain}`)
+    } else {
+      // Last resort: AI guesses domain
+      console.log('⚠️  No domain available - asking AI to guess...')
+      const companyInfo = await contactReasoner.researchCompany(company, undefined)
+      searchDomain = companyInfo.verifiedDomain
+      console.log(`⚠️  AI guessed domain: ${searchDomain}`)
+    }
 
     // STEP 3: Check cache first (high-quality contacts only)
     console.log('Step 3: Checking cache...')
@@ -464,7 +520,23 @@ ${altDomains.length > 0 ? `Suggested domains to try: ${altDomains.slice(0, 2).jo
     })
 
     console.log(`📊 Credit Usage Tracked: ${totalCreditCost} credits for ${contactsFound} contacts (${(totalCreditCost / contactsFound).toFixed(2)} per contact)`)
+
+    // COST ANALYSIS: Ensure we're under $0.20 budget
+    const SNOV_COST_PER_CREDIT = 0.029 // $29.25 / 1000 credits
+    const CLAUDE_COST_ESTIMATE = 0.06 // ~6 cents per search (job analysis + ranking)
+    const totalSnovCostUSD = totalCreditCost * SNOV_COST_PER_CREDIT
+    const totalCostUSD = totalSnovCostUSD + CLAUDE_COST_ESTIMATE
+    const costPerContactUSD = totalCostUSD / contactsFound
+
+    console.log('=== COST BREAKDOWN ===')
+    console.log(`💰 Snov.io: ${totalCreditCost} credits × $${SNOV_COST_PER_CREDIT} = $${totalSnovCostUSD.toFixed(4)}`)
+    console.log(`🤖 Claude AI: ~$${CLAUDE_COST_ESTIMATE.toFixed(4)}`)
+    console.log(`📊 Total Cost: $${totalCostUSD.toFixed(4)}`)
+    console.log(`📍 Cost per Contact: $${costPerContactUSD.toFixed(4)}`)
+    console.log(`🎯 Budget Target: $0.20`)
+    console.log(`${totalCostUSD < 0.20 ? '✅ UNDER BUDGET' : '⚠️  OVER BUDGET'}`)
     console.log('=== AI Contact Search Complete ===')
+
     return NextResponse.json({
       success: true,
       contacts: savedContacts || contactsToSave,
