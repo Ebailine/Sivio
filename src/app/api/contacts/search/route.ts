@@ -9,7 +9,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { snovClient } from '@/lib/snov/client'
 import { contactReasoner } from '@/lib/services/contact-reasoner'
 
-const CREDIT_COST = 1
+const CREDIT_COST_PER_CONTACT = 1
+const CREDIT_COST_PER_EMAIL_VALIDATION = 1
 
 export async function POST(request: Request) {
   console.log('=== AI-Powered Contact Search Started ===')
@@ -55,19 +56,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check credits
-    if (user.credits < CREDIT_COST) {
-      console.error('Insufficient credits:', user.credits)
-      return NextResponse.json(
-        {
-          error: 'Insufficient credits',
-          message: `You need ${CREDIT_COST} credit. You have ${user.credits}.`,
-          creditsRequired: CREDIT_COST,
-          creditsAvailable: user.credits,
-        },
-        { status: 402 }
-      )
-    }
+    // Note: We'll check credits after finding contacts, charging per contact found
 
     // STEP 1: AI analyzes job and creates strategy
     console.log('Step 1: AI analyzing job...')
@@ -260,11 +249,30 @@ Try searching for smaller companies or startups that typically have more public 
       console.log('Contacts saved:', savedContacts?.length)
     }
 
-    // STEP 7: Deduct credit and log
-    console.log('Deducting credit...')
+    // STEP 7: Calculate and deduct credits based on contacts found
+    const contactsFound = rankedContacts.length
+    const totalCreditCost = contactsFound * CREDIT_COST_PER_CONTACT
+    console.log(`Credits required: ${contactsFound} contacts × ${CREDIT_COST_PER_CONTACT} = ${totalCreditCost} credits`)
+
+    // Check if user has enough credits
+    if (user.credits < totalCreditCost) {
+      console.error('Insufficient credits for contacts found:', user.credits, 'needed:', totalCreditCost)
+      return NextResponse.json(
+        {
+          error: 'Insufficient credits',
+          message: `Found ${contactsFound} contact${contactsFound !== 1 ? 's' : ''} (${totalCreditCost} credit${totalCreditCost !== 1 ? 's' : ''} required). You have ${user.credits} credit${user.credits !== 1 ? 's' : ''}.`,
+          creditsRequired: totalCreditCost,
+          creditsAvailable: user.credits,
+          contactsFound,
+        },
+        { status: 402 }
+      )
+    }
+
+    console.log('Deducting credits...')
     const { error: creditError } = await supabase
       .from('users')
-      .update({ credits: user.credits - CREDIT_COST })
+      .update({ credits: user.credits - totalCreditCost })
       .eq('id', user.id)
 
     if (creditError) {
@@ -273,14 +281,15 @@ Try searching for smaller companies or startups that typically have more public 
 
     await supabase.from('credit_transactions').insert({
       user_id: user.id,
-      amount: -CREDIT_COST,
+      amount: -totalCreditCost,
       type: 'contact_search',
-      description: `AI-powered search for ${company}`,
+      description: `AI-powered search for ${company} (${contactsFound} contact${contactsFound !== 1 ? 's' : ''})`,
       metadata: {
         strategy: strategy.reasoning,
         confidence: strategy.confidenceScore,
         approach: strategy.approach,
-        contactsFound: rankedContacts.length,
+        contactsFound,
+        creditsPerContact: CREDIT_COST_PER_CONTACT,
       },
     })
 
@@ -288,9 +297,10 @@ Try searching for smaller companies or startups that typically have more public 
     return NextResponse.json({
       success: true,
       contacts: savedContacts || contactsToSave,
-      creditsRemaining: user.credits - CREDIT_COST,
-      remainingCredits: user.credits - CREDIT_COST,
-      creditsDeducted: CREDIT_COST,
+      creditsRemaining: user.credits - totalCreditCost,
+      remainingCredits: user.credits - totalCreditCost,
+      creditsDeducted: totalCreditCost,
+      creditsPerContact: CREDIT_COST_PER_CONTACT,
       cached: false,
       strategy: {
         reasoning: strategy.reasoning,

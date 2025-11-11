@@ -56,7 +56,7 @@ export default function ContactFinderModal({
   const [creditsDeducted, setCreditsDeducted] = useState(0)
   const [strategy, setStrategy] = useState<any>(null)
 
-  const CREDIT_COST = 1
+  const CREDIT_COST_PER_CONTACT = 1
 
   useEffect(() => {
     if (isOpen && companyDomain) {
@@ -88,8 +88,9 @@ export default function ContactFinderModal({
       return
     }
 
-    if (userCredits < CREDIT_COST) {
-      setError(`Insufficient credits. You need ${CREDIT_COST} credit but only have ${userCredits}.`)
+    // Note: Credits are now charged per contact found, not upfront
+    if (userCredits < CREDIT_COST_PER_CONTACT) {
+      setError(`Insufficient credits. You need at least ${CREDIT_COST_PER_CONTACT} credit per contact. You have ${userCredits}.`)
       return
     }
 
@@ -212,10 +213,10 @@ export default function ContactFinderModal({
                     <Coins className="text-blue-600 mt-0.5" size={20} />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-blue-900">
-                        Credit Cost: {CREDIT_COST} credit
+                        Pay-per-contact: {CREDIT_COST_PER_CONTACT} credit per contact found
                       </p>
                       <p className="text-xs text-blue-700 mt-1">
-                        Your balance: {userCredits} credits
+                        Your balance: {userCredits} credits · Only charged for results
                       </p>
                     </div>
                   </div>
@@ -238,7 +239,7 @@ export default function ContactFinderModal({
                 ) : (
                   <button
                     onClick={handleSearch}
-                    disabled={loading || userCredits < CREDIT_COST}
+                    disabled={loading || userCredits < CREDIT_COST_PER_CONTACT}
                     className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
@@ -249,7 +250,7 @@ export default function ContactFinderModal({
                     ) : (
                       <>
                         <Search size={20} />
-                        Search for Contacts ({CREDIT_COST} credit)
+                        Search for Contacts
                       </>
                     )}
                   </button>
