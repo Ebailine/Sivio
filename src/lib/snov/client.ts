@@ -183,65 +183,44 @@ class SnovClient {
       // Map v2 API response to expected SnovEmail format
       const prospects = resultData.data || []
 
-      // For each prospect, we need to fetch their emails
-      const emailPromises = prospects.slice(0, 20).map(async (prospect: any) => {
-        const prospectHash = prospect.search_emails_start?.split('/').pop()
+      console.log(`Processing ${prospects.length} prospects from Snov.io`)
 
-        if (!prospectHash) {
-          return null
-        }
+      // Extract emails from prospects - v2 API includes emails in the main response
+      const allEmails: SnovEmail[] = []
 
-        try {
-          // Start email search for this prospect
-          const emailStartResp = await fetch(
-            `${this.baseUrl}/domain-search/prospects/search-emails/start/${prospectHash}`,
-            {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` },
-            }
-          )
+      for (const prospect of prospects) {
+        // Check if prospect has emails
+        const emailsData = prospect.emails?.emails || []
 
-          if (!emailStartResp.ok) return null
-
-          const emailStartData = await emailStartResp.json()
-          const emailTaskHash = emailStartData.meta?.task_hash
-
-          if (!emailTaskHash) return null
-
-          // Wait a bit
-          await new Promise(resolve => setTimeout(resolve, 1500))
-
-          // Get email results
-          const emailResultResp = await fetch(
-            `${this.baseUrl}/domain-search/prospects/search-emails/result/${emailTaskHash}`,
-            {
-              method: 'GET',
-              headers: { 'Authorization': `Bearer ${token}` },
-            }
-          )
-
-          if (!emailResultResp.ok) return null
-
-          const emailResultData = await emailResultResp.json()
-          const emails = emailResultData.data || []
-
-          // Return prospect with emails
-          return emails.map((emailData: any) => ({
-            email: emailData.email || '',
+        if (emailsData.length > 0) {
+          // Prospect has emails - add them
+          for (const emailData of emailsData) {
+            allEmails.push({
+              email: emailData.email || '',
+              firstName: prospect.first_name || null,
+              lastName: prospect.last_name || null,
+              position: prospect.position || null,
+              type: 'personal',
+              status: emailData.smtp_status || 'unverified',
+              source: prospect.source_page || null,
+            })
+          }
+        } else {
+          // Prospect has no email - still include them with empty email
+          // This allows showing LinkedIn profiles even without emails
+          allEmails.push({
+            email: '', // Empty email to mark as no email available
             firstName: prospect.first_name || null,
             lastName: prospect.last_name || null,
             position: prospect.position || null,
             type: 'personal',
-            status: emailData.status || 'unverified',
+            status: 'unknown',
             source: prospect.source_page || null,
-          }))
-        } catch (error) {
-          return null
+          })
         }
-      })
+      }
 
-      const emailResults = await Promise.all(emailPromises)
-      const allEmails = emailResults.filter(Boolean).flat()
+      console.log(`Extracted ${allEmails.length} contacts (${allEmails.filter(e => e.email).length} with emails)`)
 
       return allEmails
 

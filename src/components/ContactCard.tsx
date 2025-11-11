@@ -83,13 +83,19 @@ export default function ContactCard({ contact, onSelect, onGenerateEmail, isSele
       {/* Email */}
       <div className="flex items-center gap-2 mb-2">
         <Mail size={16} className="text-gray-400" />
-        <a
-          href={`mailto:${contact.email}`}
-          onClick={(e) => e.stopPropagation()}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          {contact.email}
-        </a>
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-sm text-gray-500 italic">
+            No email available - LinkedIn only
+          </span>
+        )}
       </div>
 
       {/* Email Status */}

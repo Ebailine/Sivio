@@ -160,9 +160,14 @@ Try searching for smaller companies or startups that typically have more public 
       )
     }
 
-    // Pre-filter obvious bad contacts
+    // Pre-filter obvious bad contacts (but keep contacts without emails)
     const preFiltered = snovResults.filter(contact => {
       const email = contact.email?.toLowerCase() || ''
+
+      // Allow contacts with no email (we'll show their LinkedIn)
+      if (!email) return true
+
+      // Filter out generic emails
       const genericPrefixes = [
         'info@', 'support@', 'hello@', 'contact@', 'sales@', 'admin@',
         'service@', 'help@', 'team@', 'office@', 'general@', 'marketing@',
@@ -171,7 +176,10 @@ Try searching for smaller companies or startups that typically have more public 
       return !genericPrefixes.some(prefix => email.startsWith(prefix))
     })
 
-    console.log(`Pre-filtered from ${snovResults.length} to ${preFiltered.length} contacts`)
+    const contactsWithEmails = preFiltered.filter(c => c.email).length
+    const contactsWithoutEmails = preFiltered.length - contactsWithEmails
+
+    console.log(`Pre-filtered: ${preFiltered.length} total (${contactsWithEmails} with emails, ${contactsWithoutEmails} LinkedIn-only)`)
 
     if (preFiltered.length === 0) {
       return NextResponse.json(
@@ -185,12 +193,13 @@ Try searching for smaller companies or startups that typically have more public 
 
     // Format for AI
     const formattedContacts = preFiltered.map(c => ({
-      email: c.email,
+      email: c.email || 'no-email@placeholder.com', // Placeholder for contacts without emails
       first_name: c.firstName,
       last_name: c.lastName,
       full_name: [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Unknown',
       position: c.position,
-      email_status: c.status || 'unverified',
+      email_status: c.email ? (c.status || 'unverified') : 'no_email',
+      linkedin_url: c.source || null, // LinkedIn URL from source_page
     }))
 
     // STEP 5: AI ranks and filters to top 1-4
@@ -215,14 +224,15 @@ Try searching for smaller companies or startups that typically have more public 
 
     // STEP 6: Save to database with AI analysis
     const contactsToSave = rankedContacts.map(contact => ({
-      email: contact.email,
+      email: contact.email === 'no-email@placeholder.com' ? null : contact.email,
       first_name: contact.first_name,
       last_name: contact.last_name,
       full_name: contact.full_name,
       position: contact.position,
       company_name: company,
       company_domain: searchDomain,
-      email_status: contact.email_status,
+      linkedin_url: contact.linkedin_url || null,
+      email_status: contact.email_status === 'no_email' ? 'unknown' : contact.email_status,
       relevance_score: contact.analysis.relevanceScore,
       is_key_decision_maker: contact.analysis.relevanceScore >= 85,
       department: strategy.targetDepartments[0] || null,
