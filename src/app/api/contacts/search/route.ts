@@ -8,6 +8,8 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { snovClient } from '@/lib/snov/client'
 import { contactReasoner } from '@/lib/services/contact-reasoner'
+import { jobAnalyzer } from '@/lib/services/job-analyzer'
+import { companyResearcher } from '@/lib/services/company-researcher'
 
 const CREDIT_COST_PER_CONTACT = 1
 const CREDIT_COST_PER_EMAIL_VALIDATION = 1
@@ -57,6 +59,43 @@ export async function POST(request: Request) {
     }
 
     // Note: We'll check credits after finding contacts, charging per contact found
+
+    // NEW STEP 0: Analyze job if we have the URL
+    let jobAnalysis = null
+    let companyData = null
+
+    if (jobId) {
+      try {
+        // Fetch job details
+        const { data: job } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('id', jobId)
+          .single()
+
+        if (job?.url) {
+          console.log('Step 0a: Analyzing job posting...')
+          jobAnalysis = await jobAnalyzer.quickAnalyze({
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            description: job.description || '',
+            url: job.url,
+          })
+
+          console.log('Step 0b: Researching company...')
+          companyData = await companyResearcher.researchCompany(
+            jobAnalysis.company.domain,
+            jobAnalysis.company.name
+          )
+
+          console.log(`Enhanced context: ${companyData.teamMembers.length} team members, ${companyData.departments.length} depts`)
+        }
+      } catch (error) {
+        console.error('Error in enhanced job analysis:', error)
+        // Continue without enhanced data
+      }
+    }
 
     // STEP 1: AI analyzes job and creates strategy
     console.log('Step 1: AI analyzing job...')
