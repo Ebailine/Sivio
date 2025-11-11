@@ -98,7 +98,8 @@ export async function POST(request: Request) {
     }
 
     // STEP 1: AI analyzes job and creates strategy
-    console.log('Step 1: AI analyzing job...')
+    // NOW USES ENHANCED DATA for much better targeting!
+    console.log('Step 1: AI analyzing job with enhanced context...')
     const jobContext = {
       title: jobTitle || 'Position',
       company,
@@ -108,15 +109,31 @@ export async function POST(request: Request) {
       location,
     }
 
-    const strategy = await contactReasoner.analyzeJob(jobContext)
-    console.log('Strategy confidence:', strategy.confidenceScore)
+    // Build enhanced context if we have the data
+    const enhancedContext = (jobAnalysis && companyData) ? {
+      jobAnalysis,
+      companyResearch: companyData,
+    } : undefined
 
-    // If confidence too low, ask user for more info
-    if (strategy.confidenceScore < 60) {
+    if (enhancedContext) {
+      console.log(`✅ Using enhanced context: ${companyData.teamMembers.length} team members, ${companyData.departments.length} depts`)
+    } else {
+      console.log('⚠️  No enhanced context - using basic job info only')
+    }
+
+    const strategy = await contactReasoner.analyzeJob(jobContext, enhancedContext)
+    console.log('Strategy confidence:', strategy.confidenceScore)
+    if (strategy.specificPeople && strategy.specificPeople.length > 0) {
+      console.log('🎯 Targeting specific people:', strategy.specificPeople.slice(0, 3).join(', '))
+    }
+
+    // Lower threshold since we have better data now
+    // Only reject if confidence is VERY low (< 40)
+    if (strategy.confidenceScore < 40) {
       return NextResponse.json(
         {
           error: 'Need more information',
-          message: 'The AI needs more details about this job to find the right contacts. Please provide a job description or try a different company.',
+          message: 'Unable to identify good contacts with the available information. Try providing more job details or checking the company domain.',
           needsMoreInfo: true,
         },
         { status: 400 }
@@ -242,11 +259,13 @@ Try searching for smaller companies or startups that typically have more public 
     }))
 
     // STEP 5: AI ranks and filters to top 1-4
-    console.log('Step 5: AI ranking contacts...')
+    // NOW USES ENHANCED DATA to prioritize specific people from org chart
+    console.log('Step 5: AI ranking contacts with enhanced matching...')
     const rankedContacts = await contactReasoner.rankContacts(
       formattedContacts,
       jobContext,
-      strategy
+      strategy,
+      enhancedContext
     )
 
     if (rankedContacts.length === 0) {
