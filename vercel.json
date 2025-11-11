@@ -3,6 +3,10 @@
     {
       "path": "/api/jobs/sync",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/admin/cache-cleanup",
+      "schedule": "0 3 * * *"
     }
   ]
 }
