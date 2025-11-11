@@ -67,10 +67,23 @@ export async function POST(request: Request) {
     let searchDomain = domain
     if (!searchDomain && company) {
       // Simple domain extraction
-      searchDomain = company
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-      searchDomain = searchDomain + '.com'
+      const companyKey = company.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+      // Known company domain mappings (for companies with multiple domains or non-standard domains)
+      const domainMappings: Record<string, string[]> = {
+        'meta': ['facebook.com', 'meta.com'],
+        'facebook': ['facebook.com'],
+        'alphabet': ['google.com', 'alphabet.com'],
+        'twitter': ['x.com', 'twitter.com'],
+        'x': ['x.com', 'twitter.com'],
+      }
+
+      // Check if company has known alternative domains
+      if (domainMappings[companyKey]) {
+        searchDomain = domainMappings[companyKey][0] // Use first alternative
+      } else {
+        searchDomain = companyKey + '.com'
+      }
     }
 
     console.log('Searching domain:', searchDomain)
@@ -128,7 +141,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'No contacts found',
-          message: `No contacts found for ${company || searchDomain}. The company might not have publicly available contact information.`,
+          message: `No contacts found for ${company || searchDomain}.
+
+This can happen when:
+• The company doesn't have publicly available contact information
+• The company uses strict privacy controls
+• Large tech companies often hide employee emails
+
+Try searching for smaller companies or startups that typically have more public contact information available.`,
         },
         { status: 404 }
       )
