@@ -1,6 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
+import Link from 'next/link'
 
 export default async function DashboardPage() {
   const user = await currentUser()
@@ -51,9 +52,9 @@ export default async function DashboardPage() {
         <div className="mt-8 bg-white p-6 rounded-lg shadow">
           <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+            <Link href="/jobs" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-center">
               Browse Jobs
-            </button>
+            </Link>
             <button className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
               Find Contacts
             </button>
