@@ -96,8 +96,10 @@ export class JobSyncService {
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500))
 
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error syncing category ${category}:`, error)
+        console.error(`Error message: ${error?.message}`)
+        console.error(`Error stack: ${error?.stack}`)
         stats.errors++
       }
     }
