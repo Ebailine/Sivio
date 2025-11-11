@@ -112,8 +112,8 @@ export class CompanyResearcher {
         })),
         departments: scrapedData.departments.map(d => d.name),
         company_size_category: this.categorizeSizeCategory(scrapedData.companySize),
-        industry: scrapedData.industry,
-        company_description: scrapedData.description,
+        industry: scrapedData.industry ?? undefined,
+        company_description: scrapedData.description ?? undefined,
       })
 
       const duration = Math.round((Date.now() - startTime) / 1000)
