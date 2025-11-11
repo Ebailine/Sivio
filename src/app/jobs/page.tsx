@@ -30,11 +30,16 @@ export default function JobsPage() {
   const [search, setSearch] = useState('')
   const [jobType, setJobType] = useState('')
   const [remote, setRemote] = useState('')
+  const [location, setLocation] = useState('')
+  const [category, setCategory] = useState('')
+  const [salaryMin, setSalaryMin] = useState('')
+  const [salaryMax, setSalaryMax] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set())
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<any>(null)
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -44,7 +49,11 @@ export default function JobsPage() {
 
   useEffect(() => {
     fetchJobs()
-  }, [search, jobType, remote, page])
+  }, [search, jobType, remote, location, category, salaryMin, salaryMax, page])
+
+  useEffect(() => {
+    fetchSyncStatus()
+  }, [])
 
   const fetchJobs = async () => {
     setLoading(true)
@@ -55,6 +64,10 @@ export default function JobsPage() {
         ...(search && { search }),
         ...(jobType && { jobType }),
         ...(remote && { remote }),
+        ...(location && { location }),
+        ...(category && { category }),
+        ...(salaryMin && { salaryMin }),
+        ...(salaryMax && { salaryMax }),
       })
 
       const response = await fetch(`/api/jobs?${params}`)
@@ -66,6 +79,30 @@ export default function JobsPage() {
       console.error('Error fetching jobs:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/jobs/sync')
+      const data = await response.json()
+      setSyncStatus(data)
+    } catch (error) {
+      console.error('Error fetching sync status:', error)
+    }
+  }
+
+  const handleManualSync = async () => {
+    if (confirm('Manually sync jobs now? This imports new jobs from Adzuna and may take a few minutes.')) {
+      try {
+        const res = await fetch('/api/jobs/sync', { method: 'POST' })
+        const data = await res.json()
+        alert(data.message || 'Sync complete!')
+        fetchSyncStatus()
+        fetchJobs()
+      } catch (error) {
+        alert('Sync failed. Please try again.')
+      }
     }
   }
 
@@ -193,23 +230,108 @@ export default function JobsPage() {
                 <option value="false">On-Site Only</option>
               </select>
 
-              {(search || jobType || remote) && (
+              <input
+                type="text"
+                placeholder="City or State"
+                value={location}
+                onChange={(e) => {
+                  setLocation(e.target.value)
+                  setPage(1)
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-40"
+              />
+
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value)
+                  setPage(1)
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Categories</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Sales">Sales</option>
+                <option value="Finance">Finance & Accounting</option>
+                <option value="HR">HR & Recruiting</option>
+                <option value="Operations">Operations</option>
+                <option value="Business">Business Management</option>
+                <option value="Consulting">Consulting</option>
+                <option value="Graduate">Graduate Programs</option>
+              </select>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Min $"
+                  value={salaryMin}
+                  onChange={(e) => {
+                    setSalaryMin(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <span className="text-gray-500">-</span>
+                <input
+                  type="number"
+                  placeholder="Max $"
+                  value={salaryMax}
+                  onChange={(e) => {
+                    setSalaryMax(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {(search || jobType || remote || location || category || salaryMin || salaryMax) && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch('')
                     setJobType('')
                     setRemote('')
+                    setLocation('')
+                    setCategory('')
+                    setSalaryMin('')
+                    setSalaryMax('')
                     setPage(1)
                   }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 underline"
                 >
-                  Clear Filters
+                  Clear All Filters
                 </button>
               )}
             </div>
           </form>
         </div>
+
+        {/* Sync Status Banner */}
+        {syncStatus && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-lg font-semibold text-blue-900 mb-1">
+                  📊 {syncStatus.totalActiveJobs?.toLocaleString() || 0} Active Jobs from Real Companies
+                </p>
+                <p className="text-sm text-blue-700">
+                  Powered by Adzuna · {syncStatus.totalArchivedJobs?.toLocaleString() || 0} archived · Auto-syncs daily at 2 AM UTC
+                </p>
+                {syncStatus.lastSyncDate && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Last synced: {new Date(syncStatus.lastSyncDate).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleManualSync}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Manual Sync
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Results Count */}
         <div className="mb-6">
