@@ -71,11 +71,12 @@ export class AdzunaClient {
       app_id: ADZUNA_APP_ID,
       app_key: ADZUNA_API_KEY,
       results_per_page: results_per_page.toString(),
-      what,
-      where,
       content_type: 'application/json',
     })
 
+    // Only add optional parameters if they have values
+    if (what) searchParams.append('what', what)
+    if (where) searchParams.append('where', where)
     if (salary_min) searchParams.append('salary_min', salary_min.toString())
     if (salary_max) searchParams.append('salary_max', salary_max.toString())
     if (max_days_old) searchParams.append('max_days_old', max_days_old.toString())
