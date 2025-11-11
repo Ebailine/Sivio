@@ -317,10 +317,148 @@ export async function POST(request: Request) {
 
     if (!snovResults || snovResults.length === 0) {
       console.log('❌ No contacts found from Snov.io')
-      console.log('Domain searched:', searchDomain)
-      console.log('Company name:', company)
+      console.log('🔄 Activating LinkedIn-only fallback mode...')
 
-      // Suggest alternative domains
+      // FALLBACK TIER 1: Use LinkedIn-inferred contacts (already generated at line 192!)
+      if (linkedInContacts && linkedInContacts.length > 0) {
+        console.log(`✅ Using ${linkedInContacts.length} LinkedIn-inferred contacts (FREE)`)
+
+        // Convert LinkedIn contacts to standard format
+        const linkedInOnlyContacts = linkedInContacts.slice(0, 4).map((lc, index) => {
+          const nameParts = lc.name.split(' ')
+          const firstName = nameParts[0] || 'Unknown'
+          const lastName = nameParts.slice(1).join(' ') || ''
+
+          return {
+            email: null, // No verified email available
+            first_name: firstName,
+            last_name: lastName,
+            full_name: lc.name,
+            position: lc.title,
+            company_name: company,
+            company_domain: searchDomain,
+            linkedin_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + lc.title)}`,
+            email_status: 'unknown' as const,
+            relevance_score: lc.relevanceScore,
+            is_key_decision_maker: lc.relevanceScore >= 85,
+            department: lc.department,
+            source: 'linkedin_inferred',
+            metadata: {
+              aiReasoning: lc.reasoning,
+              contactMethod: 'linkedin',
+              searchGuidance: `Search for "${lc.name}" at "${company}" on LinkedIn`,
+              isInferredContact: true,
+              fallbackMode: true,
+            }
+          }
+        })
+
+        // Save to database
+        const { data: savedContacts, error: saveError } = await supabase
+          .from('contacts')
+          .insert(linkedInOnlyContacts)
+          .select()
+
+        if (saveError) {
+          console.error('Error saving LinkedIn contacts:', saveError)
+        } else {
+          console.log(`✅ Saved ${savedContacts?.length} LinkedIn contacts to database`)
+        }
+
+        // Charge 1 credit per contact (fair pricing for AI-inferred data)
+        const contactsFound = linkedInOnlyContacts.length
+        const totalCreditCost = contactsFound * CREDIT_COST_PER_CONTACT
+
+        // Check if user has enough credits
+        if (user.credits < totalCreditCost) {
+          return NextResponse.json(
+            {
+              error: 'Insufficient credits',
+              message: `Found ${contactsFound} likely contacts (${totalCreditCost} credits required). You have ${user.credits} credits.`,
+              contactsFound,
+              creditsRequired: totalCreditCost,
+            },
+            { status: 402 }
+          )
+        }
+
+        // Deduct credits
+        await supabase
+          .from('users')
+          .update({ credits: user.credits - totalCreditCost })
+          .eq('id', user.id)
+
+        await supabase.from('credit_transactions').insert({
+          user_id: user.id,
+          amount: -totalCreditCost,
+          type: 'contact_search',
+          description: `LinkedIn-inferred contacts for ${company} (${contactsFound} contacts)`,
+          metadata: {
+            fallbackMode: true,
+            contactMethod: 'linkedin',
+            contactsFound,
+            snovResultsCount: 0,
+          },
+        })
+
+        // Track credit usage
+        const hrContactsFound = linkedInOnlyContacts.filter(c =>
+          c.metadata.aiReasoning?.toLowerCase().includes('hr') ||
+          c.metadata.aiReasoning?.toLowerCase().includes('recruit')
+        ).length
+
+        await creditTracker.logUsage({
+          userId: user.id,
+          action: 'domain_search',
+          creditsUsed: totalCreditCost,
+          creditsEstimated: totalCreditCost,
+          creditsActual: totalCreditCost,
+          results: contactsFound,
+          costPerContact: totalCreditCost / contactsFound,
+          efficiency: (contactsFound / totalCreditCost) * 100,
+          metadata: {
+            company,
+            domain: searchDomain,
+            searchType: 'linkedin_fallback',
+            contactsFound,
+            hrContactsFound,
+            teamContactsFound: contactsFound - hrContactsFound,
+          },
+        })
+
+        console.log(`💰 LinkedIn fallback: ${totalCreditCost} credits for ${contactsFound} contacts`)
+        console.log('=== LinkedIn Fallback Mode Complete ===')
+
+        return NextResponse.json({
+          success: true,
+          contacts: savedContacts || linkedInOnlyContacts,
+          creditsRemaining: user.credits - totalCreditCost,
+          remainingCredits: user.credits - totalCreditCost,
+          creditsDeducted: totalCreditCost,
+          fallback_mode: true,
+          fallback_type: 'linkedin_inferred',
+          message: `Found ${contactsFound} likely contacts via AI analysis. Verified emails not available - reach out via LinkedIn.`,
+          linkedin_search_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' HR recruiter')}`,
+          guidance: {
+            method: 'linkedin',
+            instructions: [
+              'Search for these people on LinkedIn',
+              'Send personalized connection requests or InMails',
+              `Mention the ${jobTitle || 'position'} you're applying for`,
+              'Be professional and concise in your message'
+            ]
+          },
+          strategy: {
+            reasoning: strategy.reasoning,
+            confidence: strategy.confidenceScore,
+            approach: strategy.approach,
+          },
+        })
+      }
+
+      // FALLBACK TIER 2: No LinkedIn contacts - return manual guidance
+      console.log('⚠️ No LinkedIn contacts available - providing manual guidance')
+
       const altDomains = [
         searchDomain.replace(/inc\.com$/, '.com'),
         searchDomain.replace(/llc\.com$/, '.com'),
@@ -330,18 +468,29 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         {
-          error: 'No contacts found',
-          message: `No contacts found for ${company} at domain "${searchDomain}".
-
-This can happen when:
-• The domain is incorrect (try manually entering the correct website)
-• The company doesn't have publicly listed contact information
-• The company uses strict privacy controls
-
-${altDomains.length > 0 ? `Suggested domains to try: ${altDomains.slice(0, 2).join(', ')}` : ''}`,
-          suggestedDomains: altDomains.slice(0, 3),
+          success: false,
+          error: 'No automated contacts found',
+          message: `Unable to find contacts for ${company} automatically. Use the manual research strategies below.`,
+          manual_guidance: {
+            linkedin_search_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' HR')}`,
+            google_search_url: `https://www.google.com/search?q=${encodeURIComponent(`"${company}" email format`)}`,
+            company_website: `https://${searchDomain}/about`,
+            search_tips: [
+              `Search LinkedIn for: "${company} recruiter"`,
+              `Search LinkedIn for: "${company} talent acquisition"`,
+              `Visit ${searchDomain}/about or ${searchDomain}/team`,
+              `Call company main number and ask for HR department`,
+              `Try common email patterns: firstname@${searchDomain}`
+            ],
+            suggested_domains: altDomains.length > 0 ? altDomains : undefined,
+          },
+          strategy: {
+            reasoning: strategy.reasoning,
+            confidence: strategy.confidenceScore,
+            approach: strategy.approach,
+          },
         },
-        { status: 404 }
+        { status: 200 } // 200 not 404 - we're providing valuable guidance
       )
     }
 
