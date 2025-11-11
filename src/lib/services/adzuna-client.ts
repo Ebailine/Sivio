@@ -68,21 +68,21 @@ export class AdzunaClient {
     } = params
 
     // Build query string manually to avoid URLSearchParams encoding issues
-    const params: string[] = [
+    const queryParams: string[] = [
       `app_id=${ADZUNA_APP_ID}`,
       `app_key=${ADZUNA_API_KEY}`,
       `results_per_page=${results_per_page}`,
     ]
 
     // Add optional parameters
-    if (what) params.push(`what=${encodeURIComponent(what)}`)
-    if (where) params.push(`where=${encodeURIComponent(where)}`)
-    if (salary_min) params.push(`salary_min=${salary_min}`)
-    if (salary_max) params.push(`salary_max=${salary_max}`)
-    if (max_days_old) params.push(`max_days_old=${max_days_old}`)
-    if (category) params.push(`category=${category}`)
+    if (what) queryParams.push(`what=${encodeURIComponent(what)}`)
+    if (where) queryParams.push(`where=${encodeURIComponent(where)}`)
+    if (salary_min) queryParams.push(`salary_min=${salary_min}`)
+    if (salary_max) queryParams.push(`salary_max=${salary_max}`)
+    if (max_days_old) queryParams.push(`max_days_old=${max_days_old}`)
+    if (category) queryParams.push(`category=${category}`)
 
-    const url = `${ADZUNA_BASE_URL}/jobs/${this.country}/search/${page}?${params.join('&')}`
+    const url = `${ADZUNA_BASE_URL}/jobs/${this.country}/search/${page}?${queryParams.join('&')}`
 
     console.log('Adzuna API call:', { category, what, results_per_page })
     console.log('Full URL:', url)
