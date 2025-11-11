@@ -3,18 +3,18 @@ import { adzunaClient } from '@/lib/services/adzuna-client'
 
 export async function GET() {
   try {
-    const appId = process.env.ADZUNA_APP_ID
-    const apiKey = process.env.ADZUNA_API_KEY
+    // Test a simple API call to verify credentials work
+    const results = await adzunaClient.searchJobs({
+      results_per_page: 1,
+    })
 
     return NextResponse.json({
       success: true,
-      hasCredentials: {
-        appId: !!appId,
-        apiKey: !!apiKey,
-        appIdValue: appId || 'NOT_SET',
-        apiKeyValue: apiKey || 'NOT_SET',
+      message: 'API call successful!',
+      data: {
+        totalJobs: results.count,
+        jobsReturned: results.jobs.length,
       },
-      message: 'Credentials check only - not calling API yet',
     })
   } catch (error: any) {
     return NextResponse.json({
