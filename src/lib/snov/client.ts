@@ -54,7 +54,7 @@ class SnovClient {
   private clientSecret: string
   private accessToken: string | null = null
   private tokenExpiry: number | null = null
-  private baseUrl = 'https://api.snov.io/v1'
+  private baseUrl = 'https://api.snov.io/v2'
 
   constructor() {
     this.userId = process.env.SNOV_USER_ID!
@@ -75,7 +75,8 @@ class SnovClient {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/oauth/access_token`, {
+      // Auth endpoint is still on v1
+      const response = await fetch('https://api.snov.io/v1/oauth/access_token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,36 +105,93 @@ class SnovClient {
   }
 
   /**
-   * Search for emails by company domain
+   * Search for emails by company domain (v2 API - two-step process)
    */
   async searchByDomain(domain: string, limit: number = 50): Promise<SnovEmail[]> {
     try {
       const token = await this.getAccessToken()
 
-      const response = await fetch(`${this.baseUrl}/domain-emails-with-info`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          domain,
-          type: 'all',
-          limit,
-        }),
-      })
+      // Step 1: Start the domain emails search
+      const startResponse = await fetch(
+        `${this.baseUrl}/domain-search/domain-emails/start?domain=${encodeURIComponent(domain)}&limit=${limit}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      )
 
-      if (!response.ok) {
-        throw new Error(`Domain search failed: ${response.status} ${response.statusText}`)
+      if (!startResponse.ok) {
+        const errorText = await startResponse.text()
+        throw new Error(`Domain search start failed: ${startResponse.status} - ${errorText}`)
       }
 
-      const data: SnovDomainSearchResponse = await response.json()
+      const startData = await startResponse.json()
+      const taskHash = startData.meta?.task_hash
 
-      if (!data.success) {
-        throw new Error('Domain search was not successful')
+      if (!taskHash) {
+        throw new Error('No task hash returned from domain search')
       }
 
-      return data.emails || []
+      // Step 2: Wait for processing (3 seconds is recommended by Snov.io)
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
+      // Step 3: Poll for results (with retries)
+      let attempts = 0
+      const maxAttempts = 5
+      let resultData: any = null
+
+      while (attempts < maxAttempts) {
+        const resultResponse = await fetch(
+          `${this.baseUrl}/domain-search/domain-emails/result/${taskHash}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        )
+
+        if (!resultResponse.ok) {
+          throw new Error(`Domain search result failed: ${resultResponse.status}`)
+        }
+
+        resultData = await resultResponse.json()
+
+        // Check if processing is complete
+        if (resultData.status === 'completed') {
+          break
+        }
+
+        // If still processing, wait and retry
+        if (resultData.status === 'in_progress') {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          attempts++
+          continue
+        }
+
+        // If failed or unknown status
+        throw new Error(`Domain search failed with status: ${resultData.status}`)
+      }
+
+      if (!resultData || resultData.status !== 'completed') {
+        throw new Error('Domain search timed out or failed to complete')
+      }
+
+      // Map v2 API response to expected SnovEmail format
+      const emails = resultData.data || []
+
+      return emails.map((item: any) => ({
+        email: item.email || '',
+        firstName: item.first_name || null,
+        lastName: item.last_name || null,
+        position: item.position || null,
+        type: item.type || 'personal',
+        status: item.status || 'unverified',
+        source: item.source || null,
+      }))
+
     } catch (error: any) {
       throw new Error(`Failed to search domain: ${error.message}`)
     }
