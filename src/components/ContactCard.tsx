@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, Linkedin, CheckCircle2, XCircle, AlertCircle, TrendingUp, Briefcase } from 'lucide-react'
+import { Mail, Linkedin, CheckCircle2, XCircle, AlertCircle, TrendingUp, Briefcase, Sparkles } from 'lucide-react'
 
 interface Contact {
   id: string
@@ -26,10 +26,11 @@ interface Contact {
 interface ContactCardProps {
   contact: Contact
   onSelect?: (contact: Contact) => void
+  onGenerateEmail?: (contact: Contact) => void
   isSelected?: boolean
 }
 
-export default function ContactCard({ contact, onSelect, isSelected = false }: ContactCardProps) {
+export default function ContactCard({ contact, onSelect, onGenerateEmail, isSelected = false }: ContactCardProps) {
   const getEmailStatusInfo = (status: string) => {
     switch (status) {
       case 'valid':
@@ -145,6 +146,22 @@ export default function ContactCard({ contact, onSelect, isSelected = false }: C
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Generate Email Button */}
+      {onGenerateEmail && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onGenerateEmail(contact)
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm hover:shadow-md"
+          >
+            <Sparkles size={16} />
+            Generate AI Email
+          </button>
         </div>
       )}
     </div>
