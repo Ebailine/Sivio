@@ -71,20 +71,9 @@ export class JobSyncService {
 
         console.log(`Found ${searchResults.jobs.length} jobs in ${category}`)
 
-        // Filter for entry-level/internships
-        const entryLevelJobs = searchResults.jobs.filter(job => {
-          const titleLower = job.title.toLowerCase()
-          const descLower = job.description.toLowerCase()
-
-          return entryLevelKeywords.some(keyword =>
-            titleLower.includes(keyword) || descLower.includes(keyword)
-          )
-        })
-
-        console.log(`Filtered to ${entryLevelJobs.length} entry-level jobs`)
-
-        // Process each job
-        for (const job of entryLevelJobs) {
+        // Process all jobs - salary range already filters for entry-level
+        // Keyword filtering was too aggressive and rejected most valid jobs
+        for (const job of searchResults.jobs) {
           try {
             await this.processJob(job, stats)
           } catch (error) {
