@@ -6,23 +6,15 @@ export async function GET() {
     const appId = process.env.ADZUNA_APP_ID
     const apiKey = process.env.ADZUNA_API_KEY
 
-    // Test a simple API call
-    const results = await adzunaClient.searchJobs({
-      results_per_page: 1,
-    })
-
     return NextResponse.json({
       success: true,
       hasCredentials: {
         appId: !!appId,
         apiKey: !!apiKey,
-        appIdLength: appId?.length || 0,
-        apiKeyLength: apiKey?.length || 0,
+        appIdValue: appId || 'NOT_SET',
+        apiKeyValue: apiKey || 'NOT_SET',
       },
-      apiTest: {
-        jobCount: results.count,
-        resultsReturned: results.jobs.length,
-      },
+      message: 'Credentials check only - not calling API yet',
     })
   } catch (error: any) {
     return NextResponse.json({
