@@ -5,8 +5,8 @@
  */
 
 const ADZUNA_BASE_URL = 'https://api.adzuna.com/v1/api'
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID!
-const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY!
+const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID?.trim()!
+const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY?.trim()!
 
 interface AdzunaJob {
   id: string
