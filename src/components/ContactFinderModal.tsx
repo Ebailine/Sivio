@@ -56,7 +56,21 @@ export default function ContactFinderModal({
   const [creditsDeducted, setCreditsDeducted] = useState(0)
   const [strategy, setStrategy] = useState<any>(null)
 
+  // Editable search parameters
+  const [searchCompany, setSearchCompany] = useState(companyName)
+  const [searchPosition, setSearchPosition] = useState(jobTitle || '')
+  const [searchLocation, setSearchLocation] = useState(location || '')
+
   const CREDIT_COST_PER_CONTACT = 1
+
+  // Auto-fill when modal opens or props change
+  useEffect(() => {
+    if (isOpen) {
+      setSearchCompany(companyName)
+      setSearchPosition(jobTitle || '')
+      setSearchLocation(location || '')
+    }
+  }, [isOpen, companyName, jobTitle, location])
 
   useEffect(() => {
     if (isOpen && companyDomain) {
@@ -83,8 +97,9 @@ export default function ContactFinderModal({
   }
 
   const handleSearch = async () => {
-    if (!companyDomain) {
-      setError('Company domain is required to search for contacts')
+    // Validate required fields
+    if (!searchCompany.trim()) {
+      setError('Company name is required')
       return
     }
 
@@ -106,12 +121,12 @@ export default function ContactFinderModal({
         },
         body: JSON.stringify({
           domain: companyDomain,
-          company: companyName,
+          company: searchCompany.trim(),
           jobId,
-          jobTitle,
+          jobTitle: searchPosition.trim() || undefined,
           jobDescription,
           jobType,
-          location
+          location: searchLocation.trim() || undefined
         })
       })
 
@@ -222,39 +237,73 @@ export default function ContactFinderModal({
                   </div>
                 </div>
 
-                {!companyDomain ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="text-yellow-600 mt-0.5" size={20} />
-                      <div>
-                        <p className="text-sm font-medium text-yellow-900">
-                          Company domain not available
-                        </p>
-                        <p className="text-xs text-yellow-700 mt-1">
-                          We need the company's website domain to find contacts. This information may not be available for all jobs.
-                        </p>
-                      </div>
+                {/* Editable Search Parameters */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Search Parameters (AI will use these to find contacts)</h3>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Company Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={searchCompany}
+                        onChange={(e) => setSearchCompany(e.target.value)}
+                        placeholder="e.g., Stripe, Meta, Acme Inc"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Position Title
+                      </label>
+                      <input
+                        type="text"
+                        value={searchPosition}
+                        onChange={(e) => setSearchPosition(e.target.value)}
+                        placeholder="e.g., Software Engineer, Product Manager"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={searchLocation}
+                        onChange={(e) => setSearchLocation(e.target.value)}
+                        placeholder="e.g., San Francisco, CA or Remote"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
                     </div>
                   </div>
-                ) : (
-                  <button
-                    onClick={handleSearch}
-                    disabled={loading || userCredits < CREDIT_COST_PER_CONTACT}
-                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Searching for contacts...
-                      </>
-                    ) : (
-                      <>
-                        <Search size={20} />
-                        Search for Contacts
-                      </>
-                    )}
-                  </button>
-                )}
+
+                  <p className="text-xs text-gray-500 mt-3">
+                    💡 The AI uses these details to identify the best contacts (HR, recruiters, hiring managers)
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleSearch}
+                  disabled={loading || userCredits < CREDIT_COST_PER_CONTACT || !searchCompany.trim()}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Searching for contacts...
+                    </>
+                  ) : (
+                    <>
+                      <Search size={20} />
+                      Search for Contacts
+                    </>
+                  )}
+                </button>
               </div>
             )}
 
