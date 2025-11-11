@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/jobs/sync',  // Allow Vercel cron to access sync endpoint
   '/api/test-adzuna',  // Allow Adzuna testing endpoint
   '/api/test-sync',  // Allow sync testing endpoint
+  '/api/test-direct',  // Allow direct API testing endpoint
 ])
 
 export default clerkMiddleware(async (auth, request) => {
