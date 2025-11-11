@@ -154,49 +154,77 @@ class SnovClient {
       // Step 2: Wait for processing (3 seconds is recommended by Snov.io)
       await new Promise(resolve => setTimeout(resolve, 3000))
 
-      // Step 3: Poll for results (with retries)
+      // Step 3: Poll for results (with retries and backoff)
       let attempts = 0
-      const maxAttempts = 5
+      const maxAttempts = 10 // Increased from 5 to 10 for more resilience
       let resultData: any = null
+      let waitTime = 2000 // Start with 2 seconds
 
-      console.log('[Snov.io] Polling for results...')
+      console.log('[Snov.io] Polling for results with exponential backoff...')
 
       while (attempts < maxAttempts) {
-        const resultResponse = await fetch(
-          `${this.baseUrl}/domain-search/prospects/result/${taskHash}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+        try {
+          const resultResponse = await fetch(
+            `${this.baseUrl}/domain-search/prospects/result/${taskHash}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          )
+
+          if (!resultResponse.ok) {
+            console.error(`[Snov.io] Result fetch failed: ${resultResponse.status}`)
+
+            // Retry on 5xx errors (server issues)
+            if (resultResponse.status >= 500 && attempts < maxAttempts - 1) {
+              console.log(`[Snov.io] Server error - retrying in ${waitTime}ms...`)
+              await new Promise(resolve => setTimeout(resolve, waitTime))
+              waitTime = Math.min(waitTime * 1.5, 10000) // Exponential backoff, max 10s
+              attempts++
+              continue
+            }
+
+            throw new Error(`Domain search result failed: ${resultResponse.status}`)
           }
-        )
 
-        if (!resultResponse.ok) {
-          console.error(`[Snov.io] Result fetch failed: ${resultResponse.status}`)
-          throw new Error(`Domain search result failed: ${resultResponse.status}`)
+          resultData = await resultResponse.json()
+          console.log(`[Snov.io] Poll attempt ${attempts + 1}/${maxAttempts}: status = ${resultData.status}`)
+
+          // Check if processing is complete
+          if (resultData.status === 'completed') {
+            console.log('[Snov.io] ✅ Search completed!')
+            break
+          }
+
+          // If still processing, wait and retry with backoff
+          if (resultData.status === 'in_progress') {
+            console.log(`[Snov.io] Still processing, waiting ${waitTime}ms...`)
+            await new Promise(resolve => setTimeout(resolve, waitTime))
+            waitTime = Math.min(waitTime * 1.2, 5000) // Gentle exponential backoff, max 5s
+            attempts++
+            continue
+          }
+
+          // If failed or unknown status
+          console.error(`[Snov.io] Failed with status: ${resultData.status}`)
+          throw new Error(`Domain search failed with status: ${resultData.status}`)
+
+        } catch (fetchError: any) {
+          console.error(`[Snov.io] Network error on attempt ${attempts + 1}:`, fetchError.message)
+
+          // Retry on network errors
+          if (attempts < maxAttempts - 1) {
+            console.log(`[Snov.io] Network error - retrying in ${waitTime}ms...`)
+            await new Promise(resolve => setTimeout(resolve, waitTime))
+            waitTime = Math.min(waitTime * 1.5, 10000)
+            attempts++
+            continue
+          }
+
+          throw fetchError // Give up after max attempts
         }
-
-        resultData = await resultResponse.json()
-        console.log(`[Snov.io] Poll attempt ${attempts + 1}: status = ${resultData.status}`)
-
-        // Check if processing is complete
-        if (resultData.status === 'completed') {
-          console.log('[Snov.io] ✅ Search completed!')
-          break
-        }
-
-        // If still processing, wait and retry
-        if (resultData.status === 'in_progress') {
-          console.log('[Snov.io] Still processing, waiting 2s...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          attempts++
-          continue
-        }
-
-        // If failed or unknown status
-        console.error(`[Snov.io] Failed with status: ${resultData.status}`)
-        throw new Error(`Domain search failed with status: ${resultData.status}`)
       }
 
       if (!resultData || resultData.status !== 'completed') {
