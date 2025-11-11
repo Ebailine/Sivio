@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/test-adzuna',  // Allow Adzuna testing endpoint
   '/api/test-sync',  // Allow sync testing endpoint
   '/api/test-direct',  // Allow direct API testing endpoint
+  '/api/test/job-research',  // Allow job research testing endpoint
 ])
 
 export default clerkMiddleware(async (auth, request) => {
