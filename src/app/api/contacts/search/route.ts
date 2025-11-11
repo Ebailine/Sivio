@@ -130,15 +130,13 @@ export async function POST(request: Request) {
         console.log(`   - ${companyData.officeLocations.length} office locations`)
 
       } catch (error: any) {
-        console.error('❌ Job analysis failed:', error.message)
-        return NextResponse.json(
-          {
-            error: 'Failed to analyze job posting',
-            message: `Could not fetch or analyze the full job posting. This may be due to the job URL being unavailable or protected. Error: ${error.message}`,
-            details: process.env.NODE_ENV === 'development' ? error.toString() : undefined,
-          },
-          { status: 500 }
-        )
+        console.error('⚠️ Job analysis failed:', error.message)
+        console.log('🔄 Continuing without full job analysis - will use basic info only')
+
+        // DON'T fail the entire request - just continue without enhanced data
+        // The LinkedIn scraper and contact reasoner can still work with basic info
+        jobAnalysis = null
+        companyData = null
       }
     } else {
       // No jobId provided - user is doing manual search
