@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users } from 'lucide-react'
 import ContactFinderModal from './ContactFinderModal'
+import { getCompanyDomain } from '@/lib/utils/domain-guesser'
 
 interface Job {
   id: string
@@ -82,16 +83,6 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
       }
     } catch (error) {
       console.error('Failed to fetch user credits:', error)
-    }
-  }
-
-  const extractDomain = (url: string | null): string | undefined => {
-    if (!url) return undefined
-    try {
-      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`)
-      return urlObj.hostname.replace('www.', '')
-    } catch (error) {
-      return undefined
     }
   }
 
@@ -251,7 +242,7 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
           onClose={() => setShowContactFinder(false)}
           jobId={job.id}
           companyName={job.company}
-          companyDomain={extractDomain(job.url)}
+          companyDomain={getCompanyDomain(job.url, job.company)}
           userCredits={userCredits}
           onCreditsUpdate={setUserCredits}
         />
