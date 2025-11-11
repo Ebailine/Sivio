@@ -185,10 +185,40 @@ Return ONLY valid JSON (no markdown, no explanations):
     industry?: string
     hiringStructure?: string
   }> {
+    // First try to extract domain from URL if provided
+    if (companyUrl) {
+      try {
+        const url = new URL(companyUrl.startsWith('http') ? companyUrl : `https://${companyUrl}`)
+        const hostname = url.hostname.replace(/^www\./, '')
+
+        // If it looks like a company domain (not a job board), use it directly
+        const jobBoards = ['indeed.com', 'linkedin.com', 'glassdoor.com', 'adzuna.com', 'monster.com', 'ziprecruiter.com']
+        if (!jobBoards.some(jb => hostname.includes(jb))) {
+          console.log(`✅ Extracted domain from URL: ${hostname}`)
+          return {
+            verifiedDomain: hostname,
+            companySize: 'unknown',
+            industry: 'unknown',
+            hiringStructure: 'unknown'
+          }
+        }
+      } catch (error) {
+        console.log('Failed to extract domain from URL:', error)
+      }
+    }
+
+    // Fall back to AI guess
+    console.log(`⚠️  No domain provided - asking AI to guess for: ${companyName}`)
+
     const prompt = `Research this company and return ONLY valid JSON (no explanations, no markdown, no code blocks):
 
 Company: ${companyName}
 ${companyUrl ? `Website: ${companyUrl}` : ''}
+
+IMPORTANT: If you don't know the exact domain, make your best guess. Common patterns:
+- Remove spaces and special characters: "ABC Company Inc" -> "abccompany.com"
+- Remove legal suffixes: .inc, .llc, .ltd
+- Use acronyms if company name is long
 
 Return ONLY this JSON structure:
 {
