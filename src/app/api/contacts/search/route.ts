@@ -142,10 +142,13 @@ export async function POST(request: Request) {
 
     // STEP 2: Research company
     console.log('Step 2: Researching company...')
+    console.log('Input domain:', domain)
+    console.log('Input company name:', company)
+
     const companyInfo = await contactReasoner.researchCompany(company, domain)
     const searchDomain = companyInfo.verifiedDomain
 
-    console.log('Verified domain:', searchDomain)
+    console.log('✅ Verified domain for search:', searchDomain)
 
     // STEP 3: Check cache first (high-quality contacts only)
     console.log('Step 3: Checking cache...')
@@ -179,19 +182,32 @@ export async function POST(request: Request) {
     }
 
     // STEP 4: Execute optimized Snov.io search
-    console.log('Step 4: Searching Snov.io with AI strategy...')
-    console.log('Target titles:', strategy.targetTitles)
+    console.log('=== Step 4: Searching Snov.io ===')
+    console.log('Domain to search:', searchDomain)
+    console.log('AI strategy target titles:', strategy.targetTitles?.slice(0, 3) || [])
+    console.log('AI strategy approach:', strategy.approach)
 
     let snovResults
     try {
       snovResults = await snovClient.searchByDomain(searchDomain, 50)
-      console.log(`Snov.io returned ${snovResults?.length || 0} raw contacts`)
+      console.log(`✅ Snov.io returned ${snovResults?.length || 0} raw contacts`)
+
+      if (snovResults && snovResults.length > 0) {
+        // Log sample of what was found
+        const sample = snovResults.slice(0, 3).map(c => ({
+          name: `${c.firstName} ${c.lastName}`,
+          position: c.position,
+          hasEmail: !!c.email
+        }))
+        console.log('Sample contacts:', JSON.stringify(sample, null, 2))
+      }
     } catch (snovError: any) {
-      console.error('Snov.io API error:', snovError)
+      console.error('❌ Snov.io API error:', snovError)
+      console.error('Error details:', snovError.message)
       return NextResponse.json(
         {
           error: 'Failed to search Snov.io',
-          message: snovError.message || 'Snov.io API is not responding. Please try again later.',
+          message: `Unable to search for contacts: ${snovError.message}`,
           details: process.env.NODE_ENV === 'development' ? snovError.toString() : undefined,
         },
         { status: 500 }
@@ -199,18 +215,30 @@ export async function POST(request: Request) {
     }
 
     if (!snovResults || snovResults.length === 0) {
-      console.log('No contacts found from Snov.io')
+      console.log('❌ No contacts found from Snov.io')
+      console.log('Domain searched:', searchDomain)
+      console.log('Company name:', company)
+
+      // Suggest alternative domains
+      const altDomains = [
+        searchDomain.replace(/inc\.com$/, '.com'),
+        searchDomain.replace(/llc\.com$/, '.com'),
+        searchDomain.replace(/ltd\.com$/, '.com'),
+        company.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') + '.com',
+      ].filter(d => d !== searchDomain)
+
       return NextResponse.json(
         {
           error: 'No contacts found',
-          message: `No contacts found for ${company}.
+          message: `No contacts found for ${company} at domain "${searchDomain}".
 
 This can happen when:
-• The company doesn't have publicly available contact information
+• The domain is incorrect (try manually entering the correct website)
+• The company doesn't have publicly listed contact information
 • The company uses strict privacy controls
-• Large tech companies often hide employee emails
 
-Try searching for smaller companies or startups that typically have more public contact information available.`,
+${altDomains.length > 0 ? `Suggested domains to try: ${altDomains.slice(0, 2).join(', ')}` : ''}`,
+          suggestedDomains: altDomains.slice(0, 3),
         },
         { status: 404 }
       )

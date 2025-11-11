@@ -109,31 +109,40 @@ class SnovClient {
    * Returns people with names, positions, and emails
    */
   async searchByDomain(domain: string, limit: number = 50): Promise<SnovEmail[]> {
+    console.log(`[Snov.io] Searching domain: ${domain} (limit: ${limit})`)
+
     try {
       const token = await this.getAccessToken()
+      console.log('[Snov.io] Auth token obtained')
 
       // Step 1: Start the domain prospects search
-      const startResponse = await fetch(
-        `${this.baseUrl}/domain-search/prospects/start?domain=${encodeURIComponent(domain)}&limit=${limit}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      )
+      const startUrl = `${this.baseUrl}/domain-search/prospects/start?domain=${encodeURIComponent(domain)}&limit=${limit}`
+      console.log(`[Snov.io] Starting search: ${startUrl}`)
+
+      const startResponse = await fetch(startUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
 
       if (!startResponse.ok) {
         const errorText = await startResponse.text()
+        console.error(`[Snov.io] Start failed: ${startResponse.status}`, errorText)
         throw new Error(`Domain search start failed: ${startResponse.status} - ${errorText}`)
       }
 
       const startData = await startResponse.json()
+      console.log('[Snov.io] Start response:', JSON.stringify(startData, null, 2))
+
       const taskHash = startData.meta?.task_hash
 
       if (!taskHash) {
+        console.error('[Snov.io] No task hash in response')
         throw new Error('No task hash returned from domain search')
       }
+
+      console.log(`[Snov.io] Task hash: ${taskHash}`)
 
       // Step 2: Wait for processing (3 seconds is recommended by Snov.io)
       await new Promise(resolve => setTimeout(resolve, 3000))
@@ -142,6 +151,8 @@ class SnovClient {
       let attempts = 0
       const maxAttempts = 5
       let resultData: any = null
+
+      console.log('[Snov.io] Polling for results...')
 
       while (attempts < maxAttempts) {
         const resultResponse = await fetch(
@@ -155,35 +166,46 @@ class SnovClient {
         )
 
         if (!resultResponse.ok) {
+          console.error(`[Snov.io] Result fetch failed: ${resultResponse.status}`)
           throw new Error(`Domain search result failed: ${resultResponse.status}`)
         }
 
         resultData = await resultResponse.json()
+        console.log(`[Snov.io] Poll attempt ${attempts + 1}: status = ${resultData.status}`)
 
         // Check if processing is complete
         if (resultData.status === 'completed') {
+          console.log('[Snov.io] ✅ Search completed!')
           break
         }
 
         // If still processing, wait and retry
         if (resultData.status === 'in_progress') {
+          console.log('[Snov.io] Still processing, waiting 2s...')
           await new Promise(resolve => setTimeout(resolve, 2000))
           attempts++
           continue
         }
 
         // If failed or unknown status
+        console.error(`[Snov.io] Failed with status: ${resultData.status}`)
         throw new Error(`Domain search failed with status: ${resultData.status}`)
       }
 
       if (!resultData || resultData.status !== 'completed') {
+        console.error('[Snov.io] ❌ Search timed out or failed')
         throw new Error('Domain search timed out or failed to complete')
       }
 
       // Map v2 API response to expected SnovEmail format
       const prospects = resultData.data || []
 
-      console.log(`Processing ${prospects.length} prospects from Snov.io`)
+      console.log(`[Snov.io] Processing ${prospects.length} prospects from Snov.io`)
+
+      if (prospects.length === 0) {
+        console.log('[Snov.io] ⚠️  No prospects found for this domain')
+        return []
+      }
 
       // Extract emails from prospects - v2 API includes emails in the main response
       const allEmails: SnovEmail[] = []
