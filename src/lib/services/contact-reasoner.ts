@@ -43,7 +43,7 @@ export class ContactReasoner {
    * Step 1: Analyze job and create optimal search strategy
    */
   async analyzeJob(job: JobContext): Promise<SearchStrategy> {
-    const prompt = `You are an expert recruiter helping identify the best contacts to reach for job applications.
+    const prompt = `You are an expert recruiter. Analyze this job and return ONLY valid JSON (no explanations, no markdown).
 
 Job Details:
 - Title: ${job.title}
@@ -52,35 +52,22 @@ Job Details:
 - Location: ${job.location || 'Not specified'}
 - Description: ${job.description?.substring(0, 500) || 'Not provided'}
 
-Your task:
-1. Determine if this is HR-focused (recruiters/HR) or team-focused (hiring managers/team leads)
-2. Identify specific job titles to target (be precise - e.g., "Technical Recruiter" not just "Recruiter")
-3. Determine departments to search
-4. Assess seniority level needed
-5. Extract/guess company domain from company name
-6. Rate your confidence (0-100) in this strategy
-
-For internships/entry-level: Usually HR/recruiting contacts
-For technical roles: Mix of recruiters + engineering managers
-For senior roles: Directors/VPs in the department
-
-Respond in this exact JSON format:
+Return ONLY this JSON structure (no markdown, no code blocks, no explanations):
 {
-  "approach": "hr-focused" | "team-focused" | "hybrid",
-  "targetTitles": ["specific", "job", "titles"],
-  "targetDepartments": ["department", "names"],
-  "seniorityLevel": "junior|mid|senior|executive",
-  "reasoning": "why this strategy makes sense",
+  "approach": "hr-focused",
+  "targetTitles": ["Technical Recruiter", "Talent Acquisition Manager"],
+  "targetDepartments": ["Human Resources", "Recruiting"],
+  "seniorityLevel": "mid",
+  "reasoning": "Brief explanation",
   "confidenceScore": 85,
   "companyDomain": "company.com",
-  "searchKeywords": ["keyword1", "keyword2"]
-}
-
-Be specific and actionable. This will directly determine our search.`
+  "searchKeywords": ["recruiting", "talent"]
+}`
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
+      temperature: 0,
       messages: [
         {
           role: 'user',
@@ -95,18 +82,27 @@ Be specific and actionable. This will directly determine our search.`
     }
 
     // Extract JSON from response (handle markdown code blocks)
-    let jsonText = content.text
+    let jsonText = content.text.trim()
+
+    // Remove markdown code blocks if present
     const codeBlockMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
     if (codeBlockMatch) {
       jsonText = codeBlockMatch[1]
     } else {
+      // Try to extract JSON object
       const jsonMatch = jsonText.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         jsonText = jsonMatch[0]
       }
     }
 
-    const strategy: SearchStrategy = JSON.parse(jsonText)
+    let strategy: SearchStrategy
+    try {
+      strategy = JSON.parse(jsonText)
+    } catch (error) {
+      console.error('Failed to parse AI response as JSON:', jsonText.substring(0, 200))
+      throw new Error(`AI returned invalid JSON. Response started with: "${jsonText.substring(0, 50)}"`)
+    }
 
     console.log('AI Strategy Generated:', {
       approach: strategy.approach,
@@ -129,16 +125,12 @@ Be specific and actionable. This will directly determine our search.`
     industry?: string
     hiringStructure?: string
   }> {
-    const prompt = `Research this company: ${companyName}
+    const prompt = `Research this company and return ONLY valid JSON (no explanations, no markdown, no code blocks):
+
+Company: ${companyName}
 ${companyUrl ? `Website: ${companyUrl}` : ''}
 
-Provide:
-1. Correct company domain (e.g., google.com, not www.google.com)
-2. Company size (startup/small/medium/large/enterprise)
-3. Industry
-4. Typical hiring structure (centralized HR vs distributed hiring)
-
-Respond in JSON:
+Return ONLY this JSON structure:
 {
   "verifiedDomain": "company.com",
   "companySize": "large",
@@ -149,6 +141,7 @@ Respond in JSON:
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
+      temperature: 0,
       messages: [
         {
           role: 'user',
@@ -163,7 +156,7 @@ Respond in JSON:
     }
 
     // Extract JSON from response
-    let jsonText = content.text
+    let jsonText = content.text.trim()
     const codeBlockMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
     if (codeBlockMatch) {
       jsonText = codeBlockMatch[1]
@@ -174,9 +167,20 @@ Respond in JSON:
       }
     }
 
-    const result = JSON.parse(jsonText)
-    console.log('Company research:', result)
-    return result
+    try {
+      const result = JSON.parse(jsonText)
+      console.log('Company research:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to parse company research as JSON:', jsonText.substring(0, 200))
+      // Return fallback
+      return {
+        verifiedDomain: companyUrl || `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        companySize: 'unknown',
+        industry: 'unknown',
+        hiringStructure: 'unknown'
+      }
+    }
   }
 
   /**
@@ -187,41 +191,29 @@ Respond in JSON:
     job: JobContext,
     strategy: SearchStrategy
   ): Promise<Array<any & { analysis: ContactAnalysis }>> {
-    const prompt = `You are ranking contacts for job applications.
+    const prompt = `Rank these contacts and return ONLY valid JSON array (no explanations, no markdown, no code blocks).
 
 Job: ${job.title} at ${job.company}
-Strategy: ${strategy.reasoning}
 Target: ${strategy.targetTitles.join(', ')}
 
-Contacts Found (${contacts.length}):
-${contacts.map((c, i) => `
-${i + 1}. ${c.full_name || 'Unknown'}
-   Position: ${c.position || 'Not specified'}
-   Email: ${c.email}
-   Status: ${c.email_status}
-`).join('\n')}
+Contacts (${contacts.length}):
+${contacts.map((c, i) => `${i}. ${c.full_name || 'Unknown'} - ${c.position || 'Not specified'} (${c.email_status})`).join('\n')}
 
-For each contact, rate 0-100 on:
-- Position relevance to job
-- Likelihood they're involved in hiring
-- Contact quality (verified email, etc.)
-
-Return top 4 contacts as JSON array:
+Return ONLY top 4 contacts scoring 70+ as JSON array:
 [
   {
     "contactIndex": 0,
     "relevanceScore": 95,
-    "reasoning": "Senior recruiter in tech team",
+    "reasoning": "Brief reason",
     "recommendedAction": "include",
-    "keyStrengths": ["verified email", "senior position"]
+    "keyStrengths": ["strength1", "strength2"]
   }
-]
-
-Only include contacts scoring 70+. If fewer than 4 score 70+, return what you have.`
+]`
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 3000,
+      temperature: 0,
       messages: [
         {
           role: 'user',
