@@ -44,28 +44,37 @@ Company: ${companyName}
 Domain: ${domain}
 ${jobTitle ? `Job Role: ${jobTitle}` : ''}
 
+CRITICAL: Generate REALISTIC names that sound professional and diverse (not just "Sarah Johnson" and "Mike Chen").
+
 TASK: List 8-12 likely employee profiles at this company who would be contacted for a job application.
 
 PRIORITIZE (in order):
-1. HR/Recruiting roles (2-4 people)
-   - HR Manager, Recruiter, Talent Acquisition, People Operations
-   - These are PRIMARY targets
+1. HR/Recruiting roles (3-4 people) - HIGHEST PRIORITY
+   - HR Manager, Recruiter, Talent Acquisition Manager, People Operations Lead
+   - These are PRIMARY targets who ACTUALLY review applications
+   - Use titles like: "Senior Recruiter", "HR Business Partner", "Talent Acquisition Specialist"
 
 2. Team/Department roles (2-3 people)
    - Hiring Manager, Team Lead, Department Head for the role
    ${jobTitle ? `- Related to: ${jobTitle}` : ''}
+   - Use specific titles: "Engineering Manager", "Sales Director", "Operations Manager"
 
-3. Leadership (1-2 people, only if small company)
-   - CEO, Founder, VP (only for companies <100 employees)
+3. Leadership (1-2 people, only if small company <50 employees)
+   - CEO, Founder, VP (only for very small companies)
 
-INSTRUCTIONS:
-- Use realistic, common names
-- Use typical job titles for this industry
+INSTRUCTIONS FOR NAMES:
+- Use DIVERSE, realistic names (mix of genders, ethnicities)
+- Examples: "Jennifer Martinez", "David Chen", "Aisha Patel", "Marcus Williams"
+- Avoid overused names like "Sarah Johnson" unless appropriate
+- Names should match professional LinkedIn profiles
+
+INSTRUCTIONS FOR ACCURACY:
 - Mark isHRRole: true for HR/recruiting positions
 - Mark isTeamRole: true for team/department positions
-- Give HR roles relevanceScore 90-100
+- Give HR roles relevanceScore 90-100 (MOST IMPORTANT)
 - Give team roles relevanceScore 70-85
 - Give executives relevanceScore 50-60 (unless small company)
+- Department should be specific: "Human Resources", "Engineering", "Sales", etc.
 
 Return ONLY valid JSON array:
 [
