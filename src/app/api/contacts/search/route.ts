@@ -189,10 +189,24 @@ export async function POST(request: Request) {
 
     let snovResults
     try {
-      snovResults = await snovClient.searchByDomain(searchDomain, 50)
+      // Increased from 50 to 100 to get more contacts including HR
+      snovResults = await snovClient.searchByDomain(searchDomain, 100)
       console.log(`✅ Snov.io returned ${snovResults?.length || 0} raw contacts`)
 
       if (snovResults && snovResults.length > 0) {
+        // Log what types of positions were found
+        const positions = snovResults.map(c => c.position).filter(Boolean)
+        const hrPositions = positions.filter(p =>
+          p && (p.toLowerCase().includes('hr') ||
+                p.toLowerCase().includes('recruit') ||
+                p.toLowerCase().includes('talent') ||
+                p.toLowerCase().includes('human resources'))
+        )
+        console.log(`Found ${hrPositions.length} HR/recruiting contacts out of ${positions.length} total`)
+        if (hrPositions.length > 0) {
+          console.log('HR contacts found:', hrPositions.slice(0, 5))
+        }
+
         // Log sample of what was found
         const sample = snovResults.slice(0, 3).map(c => ({
           name: `${c.firstName} ${c.lastName}`,

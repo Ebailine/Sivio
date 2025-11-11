@@ -101,28 +101,40 @@ ${cr.departments.slice(0, 5).map(d =>
 ).join('\n')}`
     }
 
-    const prompt = `You are an expert at identifying the EXACT right people to contact for job applications.
+    const prompt = `You are an expert at identifying the EXACT right people to contact AFTER submitting a job application.
 
 ${contextDescription}
 
-Your task: Identify the BEST contacts to reach out to AFTER applying to this job. Consider:
-1. Who actually sees job applications at this company?
-2. Who makes hiring decisions for this role?
-3. Based on the org chart above, who should I talk to?
+CRITICAL INSTRUCTIONS - FOLLOW EXACTLY:
 
-${enhancedContext?.companyResearch ? 'IMPORTANT: We have actual team member names from the company website/LinkedIn above. If you see relevant people, include their names in specificPeople field.' : ''}
+1. PRIMARY TARGETS (MUST PRIORITIZE): Find 2-3 people from HR/Recruiting/Talent Acquisition
+   - Job titles: "Recruiter", "Talent Acquisition", "HR Manager", "People Operations", "Human Resources"
+   - These people ACTUALLY review applications and schedule interviews
+   - ALWAYS search for these first
+
+2. SECONDARY TARGETS: Find 1-2 people from the team/department for this role
+   - Hiring managers, team leads, or department heads related to the position
+   - Example: For "Software Engineer" → find "Engineering Manager" or "VP Engineering"
+   - Example: For "Real Estate Agent" → find "Broker" or "Sales Manager"
+
+3. PRIORITIZATION RULES:
+   - HR/Recruiting contacts are MORE important than team contacts
+   - A mid-level recruiter is more valuable than a C-level executive
+   - Target people who actually handle applications, not just decision makers
+
+${enhancedContext?.companyResearch ? 'IMPORTANT: We have actual team member names from the company website/LinkedIn above. PRIORITIZE anyone with HR/Recruiting/Talent in their title.' : ''}
 
 Return ONLY valid JSON (no markdown, no explanations):
 {
-  "approach": "hr-focused" | "team-focused" | "hybrid",
-  "targetTitles": ["specific job titles to search for"],
-  "targetDepartments": ["departments"],
-  "seniorityLevel": "junior" | "mid" | "senior" | "executive",
-  "reasoning": "why these contacts are best",
-  "confidenceScore": 95,
+  "approach": "hybrid",
+  "targetTitles": ["Recruiter", "Talent Acquisition Manager", "HR Manager", "Engineering Manager"],
+  "targetDepartments": ["Human Resources", "Recruiting", "Engineering"],
+  "seniorityLevel": "mid",
+  "reasoning": "Targeting HR first, then team leads",
+  "confidenceScore": 85,
   "companyDomain": "${job.companyUrl || job.company.toLowerCase().replace(/\s+/g, '') + '.com'}",
-  "searchKeywords": ["keywords"],
-  "specificPeople": ["names of specific people from the org chart above to prioritize"]
+  "searchKeywords": ["recruiting", "talent", "hr", "hiring"],
+  "specificPeople": ["names of HR/recruiting people from org chart"]
 }`
 
     const response = await anthropic.messages.create({
@@ -307,27 +319,47 @@ Target: ${strategy.targetTitles?.join(', ') || 'Any relevant contacts'}
 Approach: ${strategy.approach}
 ${strategy.specificPeople && strategy.specificPeople.length > 0 ? `\nPRIORITY TARGETS from org chart: ${strategy.specificPeople.join(', ')}` : ''}`
 
-    const prompt = `You are ranking contacts for a job application. Identify the BEST people to reach out to.
+    const prompt = `You are ranking contacts for reaching out AFTER submitting a job application.
 
 ${contextInfo}
 
 Contacts found (${contacts.length}):
 ${contactList}
 
-INSTRUCTIONS:
-- Prioritize contacts marked with [MATCHES ORG CHART - PRIORITY]
-- Look for hiring managers, recruiters, or team leads
-- Return top 4 contacts with scores 60+
-- Be realistic - if someone is clearly relevant, give them 90+
+CRITICAL RANKING RULES - FOLLOW EXACTLY:
+
+1. HR/RECRUITING CONTACTS GET HIGHEST SCORES (90-100):
+   - Titles containing: "Recruiter", "Talent Acquisition", "HR", "Human Resources", "People Operations"
+   - These people ACTUALLY review applications and schedule interviews
+   - ALWAYS rank these highest, even if they're junior level
+
+2. TEAM/DEPARTMENT CONTACTS GET MEDIUM SCORES (70-85):
+   - Hiring managers, team leads, VPs related to the role
+   - Examples: "Engineering Manager", "Sales Director", "Broker"
+   - Only rank high if they match the job department
+
+3. AUTOMATIC EXCLUSIONS (score below 60):
+   - Generic roles: "CEO", "CFO", "President" (unless small company)
+   - Unrelated departments
+   - Administrative staff not involved in hiring
+
+4. SCORING EXAMPLES:
+   - "HR Manager" = 95-100 (reviews all applications)
+   - "Recruiter" = 90-95 (schedules interviews)
+   - "Engineering Manager" for engineer role = 80-85 (hiring decision)
+   - "Broker" for sales role = 75-80 (team lead)
+   - "CEO" of large company = 50 (too senior, skip)
+
+Return top 4 contacts. MUST include at least 2 HR/recruiting if available.
 
 Return ONLY valid JSON array (no markdown, no explanations):
 [
   {
     "contactIndex": 0,
     "relevanceScore": 95,
-    "reasoning": "why this person is perfect",
+    "reasoning": "HR Manager - directly reviews applications and schedules interviews",
     "recommendedAction": "include",
-    "keyStrengths": ["strength1", "strength2"]
+    "keyStrengths": ["Reviews applications", "Schedules interviews"]
   }
 ]`
 
