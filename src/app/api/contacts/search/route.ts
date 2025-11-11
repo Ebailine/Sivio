@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     const strategy = await contactReasoner.analyzeJob(jobContext, enhancedContext)
     console.log('Strategy confidence:', strategy.confidenceScore)
     if (strategy.specificPeople && strategy.specificPeople.length > 0) {
-      console.log('🎯 Targeting specific people:', strategy.specificPeople.slice(0, 3).join(', '))
+      console.log('🎯 Targeting specific people:', strategy.specificPeople?.slice(0, 3).join(', ') || 'None')
     }
 
     // Lower threshold since we have better data now

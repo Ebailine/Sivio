@@ -73,8 +73,8 @@ ENHANCED JOB ANALYSIS:
 - Department: ${ja.department || 'Unknown'}
 - Seniority Level: ${ja.seniority}
 - Likely Hiring Manager: ${ja.likelyHiringManager || 'Unknown'}
-- Target Departments: ${ja.targetDepartments.join(', ')}
-- Required Skills: ${ja.requiredSkills.slice(0, 5).join(', ')}
+- Target Departments: ${ja.targetDepartments?.join(', ') || 'Unknown'}
+- Required Skills: ${ja.requiredSkills?.slice(0, 5).join(', ') || 'Unknown'}
 - Team Size: ${ja.teamSize || 'Unknown'}
 - Company Industry: ${ja.company.industry || 'Unknown'}
 - Company Size: ${ja.company.size || 'Unknown'}`
@@ -151,6 +151,13 @@ Return ONLY valid JSON (no markdown, no explanations):
     let strategy: SearchStrategy
     try {
       strategy = JSON.parse(jsonText)
+
+      // Ensure arrays are never undefined
+      strategy.targetTitles = strategy.targetTitles || []
+      strategy.targetDepartments = strategy.targetDepartments || []
+      strategy.searchKeywords = strategy.searchKeywords || []
+      strategy.specificPeople = strategy.specificPeople || []
+
     } catch (error) {
       console.error('Failed to parse AI response as JSON:', jsonText.substring(0, 200))
       throw new Error(`AI returned invalid JSON. Response started with: "${jsonText.substring(0, 50)}"`)
@@ -266,7 +273,7 @@ Return ONLY this JSON structure:
     }).join('\n')
 
     let contextInfo = `Job: ${job.title} at ${job.company}
-Target: ${strategy.targetTitles.join(', ')}
+Target: ${strategy.targetTitles?.join(', ') || 'Any relevant contacts'}
 Approach: ${strategy.approach}
 ${strategy.specificPeople && strategy.specificPeople.length > 0 ? `\nPRIORITY TARGETS from org chart: ${strategy.specificPeople.join(', ')}` : ''}`
 
