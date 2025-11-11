@@ -105,11 +105,18 @@ class SnovClient {
   }
 
   /**
-   * Search for prospects by company domain (v2 API - two-step process)
-   * Returns people with names, positions, and emails
+   * OPTIMIZED: Use Domain Search API (1 credit = 50 emails)
+   * This is 50x more cost-efficient than Prospect Search!
+   *
+   * Snov.io pricing:
+   * - Domain Search: 1 credit gives access to 50 domain emails
+   * - Prospect Search: 1 credit PER prospect with email
+   *
+   * Strategy: Get 50 emails for 1 credit, filter with AI locally
    */
   async searchByDomain(domain: string, limit: number = 50): Promise<SnovEmail[]> {
-    console.log(`[Snov.io] Searching domain: ${domain} (limit: ${limit})`)
+    console.log(`[Snov.io] 💰 OPTIMIZED Domain Search: ${domain}`)
+    console.log(`[Snov.io] Cost: 1 credit (will return up to 50 emails)`)
 
     try {
       const token = await this.getAccessToken()

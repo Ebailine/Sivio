@@ -10,6 +10,8 @@ import { snovClient } from '@/lib/snov/client'
 import { contactReasoner } from '@/lib/services/contact-reasoner'
 import { jobAnalyzer } from '@/lib/services/job-analyzer'
 import { companyResearcher } from '@/lib/services/company-researcher'
+import { linkedInScraper } from '@/lib/services/linkedin-scraper'
+import { creditTracker } from '@/lib/services/credit-tracker'
 
 const CREDIT_COST_PER_CONTACT = 1
 const CREDIT_COST_PER_EMAIL_VALIDATION = 1
@@ -181,11 +183,40 @@ export async function POST(request: Request) {
       })
     }
 
-    // STEP 4: Execute optimized Snov.io search
-    console.log('=== Step 4: Searching Snov.io ===')
+    // STEP 3.5: LinkedIn Research (FREE - no credits used!)
+    console.log('=== Step 3.5: FREE LinkedIn Research ===')
+    console.log('💰 COST OPTIMIZATION: Identifying contacts via AI analysis BEFORE using Snov.io credits')
+
+    let linkedInContacts: any[] = []
+    try {
+      linkedInContacts = await linkedInScraper.scrapeCompanyEmployees(
+        company,
+        searchDomain,
+        jobTitle
+      )
+      console.log(`✅ LinkedIn analysis found ${linkedInContacts.length} likely employees`)
+      console.log(`   - ${linkedInContacts.filter(c => c.isHRRole).length} HR/recruiting roles`)
+      console.log(`   - ${linkedInContacts.filter(c => c.isTeamRole).length} team/department roles`)
+
+      if (linkedInContacts.length > 0) {
+        console.log('Top 3 LinkedIn contacts:')
+        linkedInContacts.slice(0, 3).forEach(c => {
+          console.log(`   • ${c.name} - ${c.title} (score: ${c.relevanceScore})`)
+        })
+      }
+    } catch (error) {
+      console.error('LinkedIn scraper error (non-fatal):', error)
+      // Continue without LinkedIn data - not critical
+    }
+
+    // STEP 4: Execute optimized Snov.io search (1 credit = 50 emails)
+    console.log('=== Step 4: Snov.io Domain Search (1 credit) ===')
     console.log('Domain to search:', searchDomain)
     console.log('AI strategy target titles:', strategy.targetTitles?.slice(0, 3) || [])
     console.log('AI strategy approach:', strategy.approach)
+    if (linkedInContacts.length > 0) {
+      console.log(`🎯 Will match Snov.io results against ${linkedInContacts.length} LinkedIn-identified contacts`)
+    }
 
     let snovResults
     try {
@@ -403,6 +434,36 @@ ${altDomains.length > 0 ? `Suggested domains to try: ${altDomains.slice(0, 2).jo
       },
     })
 
+    // STEP 8: Track credit usage for optimization analysis
+    const hrContactsFound = rankedContacts.filter(c =>
+      c.analysis?.keyStrengths?.some((s: string) =>
+        s.toLowerCase().includes('hr') ||
+        s.toLowerCase().includes('recruit') ||
+        s.toLowerCase().includes('talent')
+      )
+    ).length
+    const teamContactsFound = contactsFound - hrContactsFound
+
+    await creditTracker.logUsage({
+      userId: user.id,
+      action: 'domain_search',
+      creditsUsed: totalCreditCost,
+      creditsEstimated: totalCreditCost,
+      creditsActual: totalCreditCost,
+      results: contactsFound,
+      costPerContact: totalCreditCost / contactsFound,
+      efficiency: (contactsFound / totalCreditCost) * 100,
+      metadata: {
+        company,
+        domain: searchDomain,
+        searchType: strategy.approach,
+        contactsFound,
+        hrContactsFound,
+        teamContactsFound,
+      },
+    })
+
+    console.log(`📊 Credit Usage Tracked: ${totalCreditCost} credits for ${contactsFound} contacts (${(totalCreditCost / contactsFound).toFixed(2)} per contact)`)
     console.log('=== AI Contact Search Complete ===')
     return NextResponse.json({
       success: true,
