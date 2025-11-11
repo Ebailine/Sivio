@@ -105,15 +105,16 @@ class SnovClient {
   }
 
   /**
-   * Search for emails by company domain (v2 API - two-step process)
+   * Search for prospects by company domain (v2 API - two-step process)
+   * Returns people with names, positions, and emails
    */
   async searchByDomain(domain: string, limit: number = 50): Promise<SnovEmail[]> {
     try {
       const token = await this.getAccessToken()
 
-      // Step 1: Start the domain emails search
+      // Step 1: Start the domain prospects search
       const startResponse = await fetch(
-        `${this.baseUrl}/domain-search/domain-emails/start?domain=${encodeURIComponent(domain)}&limit=${limit}`,
+        `${this.baseUrl}/domain-search/prospects/start?domain=${encodeURIComponent(domain)}&limit=${limit}`,
         {
           method: 'POST',
           headers: {
@@ -144,7 +145,7 @@ class SnovClient {
 
       while (attempts < maxAttempts) {
         const resultResponse = await fetch(
-          `${this.baseUrl}/domain-search/domain-emails/result/${taskHash}`,
+          `${this.baseUrl}/domain-search/prospects/result/${taskHash}`,
           {
             method: 'GET',
             headers: {
@@ -180,17 +181,69 @@ class SnovClient {
       }
 
       // Map v2 API response to expected SnovEmail format
-      const emails = resultData.data || []
+      const prospects = resultData.data || []
 
-      return emails.map((item: any) => ({
-        email: item.email || '',
-        firstName: item.first_name || null,
-        lastName: item.last_name || null,
-        position: item.position || null,
-        type: item.type || 'personal',
-        status: item.status || 'unverified',
-        source: item.source || null,
-      }))
+      // For each prospect, we need to fetch their emails
+      const emailPromises = prospects.slice(0, 20).map(async (prospect: any) => {
+        const prospectHash = prospect.search_emails_start?.split('/').pop()
+
+        if (!prospectHash) {
+          return null
+        }
+
+        try {
+          // Start email search for this prospect
+          const emailStartResp = await fetch(
+            `${this.baseUrl}/domain-search/prospects/search-emails/start/${prospectHash}`,
+            {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+            }
+          )
+
+          if (!emailStartResp.ok) return null
+
+          const emailStartData = await emailStartResp.json()
+          const emailTaskHash = emailStartData.meta?.task_hash
+
+          if (!emailTaskHash) return null
+
+          // Wait a bit
+          await new Promise(resolve => setTimeout(resolve, 1500))
+
+          // Get email results
+          const emailResultResp = await fetch(
+            `${this.baseUrl}/domain-search/prospects/search-emails/result/${emailTaskHash}`,
+            {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${token}` },
+            }
+          )
+
+          if (!emailResultResp.ok) return null
+
+          const emailResultData = await emailResultResp.json()
+          const emails = emailResultData.data || []
+
+          // Return prospect with emails
+          return emails.map((emailData: any) => ({
+            email: emailData.email || '',
+            firstName: prospect.first_name || null,
+            lastName: prospect.last_name || null,
+            position: prospect.position || null,
+            type: 'personal',
+            status: emailData.status || 'unverified',
+            source: prospect.source_page || null,
+          }))
+        } catch (error) {
+          return null
+        }
+      })
+
+      const emailResults = await Promise.all(emailPromises)
+      const allEmails = emailResults.filter(Boolean).flat()
+
+      return allEmails
 
     } catch (error: any) {
       throw new Error(`Failed to search domain: ${error.message}`)
@@ -394,11 +447,25 @@ class SnovClient {
     const genericPrefixes = [
       'info', 'contact', 'support', 'hello', 'hi', 'sales', 'admin',
       'service', 'help', 'team', 'office', 'general', 'inquiries',
-      'marketing', 'press', 'media', 'noreply', 'no-reply'
+      'marketing', 'press', 'media', 'noreply', 'no-reply', 'automated',
+      'express', 'response', 'discover', 'open', 'invitation', 'invite',
+      'welcome', 'feedback', 'careers', 'jobs', 'apply', 'applications',
+      'billing', 'payment', 'accounts', 'legal', 'privacy', 'security'
     ]
 
     const emailPrefix = email.split('@')[0].toLowerCase()
-    return genericPrefixes.some(prefix => emailPrefix === prefix || emailPrefix.startsWith(prefix))
+
+    // Check if it matches generic prefixes
+    if (genericPrefixes.some(prefix => emailPrefix === prefix || emailPrefix.startsWith(prefix))) {
+      return true
+    }
+
+    // Check if it's a very short email (like "le@")
+    if (emailPrefix.length <= 2) {
+      return true
+    }
+
+    return false
   }
 
   /**
