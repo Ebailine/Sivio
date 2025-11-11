@@ -59,31 +59,55 @@ export class JobSyncService {
       try {
         console.log(`\nSyncing category: ${category}`)
 
-        // Search with entry-level focus and salary range
-        const searchResults = await adzunaClient.searchJobs({
-          category,
-          salary_min: 30000,
-          salary_max: 90000,
-          max_days_old: 30,
-          results_per_page: Math.min(jobsPerCategory, 50), // API limit
-          page: 1,
-        })
+        // Fetch multiple pages per category to reach target
+        const pagesPerCategory = Math.ceil(jobsPerCategory / 50)
+        let categoryJobCount = 0
 
-        console.log(`Found ${searchResults.jobs.length} jobs in ${category}`)
-
-        // Process all jobs - salary range already filters for entry-level
-        // Keyword filtering was too aggressive and rejected most valid jobs
-        for (const job of searchResults.jobs) {
+        for (let page = 1; page <= pagesPerCategory && categoryJobCount < jobsPerCategory; page++) {
           try {
-            await this.processJob(job, stats)
-          } catch (error) {
-            console.error(`Error processing job ${job.id}:`, error)
+            console.log(`Fetching page ${page} of ${category}...`)
+
+            // Search with entry-level focus and salary range
+            const searchResults = await adzunaClient.searchJobs({
+              category,
+              salary_min: 30000,
+              salary_max: 90000,
+              max_days_old: 30,
+              results_per_page: 50, // API limit
+              page,
+            })
+
+            console.log(`Found ${searchResults.jobs.length} jobs on page ${page}`)
+
+            // Stop if no more results
+            if (searchResults.jobs.length === 0) {
+              console.log(`No more jobs available for ${category}`)
+              break
+            }
+
+            // Process all jobs - salary range already filters for entry-level
+            // Keyword filtering was too aggressive and rejected most valid jobs
+            for (const job of searchResults.jobs) {
+              try {
+                await this.processJob(job, stats)
+                categoryJobCount++
+              } catch (error) {
+                console.error(`Error processing job ${job.id}:`, error)
+                stats.errors++
+              }
+            }
+
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+          } catch (error: any) {
+            console.error(`Error fetching page ${page} of ${category}:`, error)
             stats.errors++
+            break // Stop pagination for this category on error
           }
         }
 
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500))
+        console.log(`Synced ${categoryJobCount} jobs from ${category}`)
 
       } catch (error: any) {
         console.error(`Error syncing category ${category}:`, error)
