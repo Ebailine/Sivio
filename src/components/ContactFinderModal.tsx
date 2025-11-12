@@ -55,6 +55,7 @@ export default function ContactFinderModal({
   const [cached, setCached] = useState(false)
   const [creditsDeducted, setCreditsDeducted] = useState(0)
   const [strategy, setStrategy] = useState<any>(null)
+  const [bypassCache, setBypassCache] = useState(false)
 
   // Editable search parameters
   const [searchCompany, setSearchCompany] = useState(companyName)
@@ -128,7 +129,8 @@ export default function ContactFinderModal({
           jobTitle: searchPosition.trim() || undefined,
           jobDescription,
           jobType,
-          location: searchLocation.trim() || undefined
+          location: searchLocation.trim() || undefined,
+          bypassCache: bypassCache
         })
       })
 
@@ -303,6 +305,24 @@ export default function ContactFinderModal({
                   <p className="text-xs text-gray-500 mt-3">
                     💡 The AI uses these details to identify the best contacts (HR, recruiters, hiring managers)
                   </p>
+                </div>
+
+                {/* Bypass Cache Checkbox */}
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bypassCache}
+                      onChange={(e) => setBypassCache(e.target.checked)}
+                      className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">Force fresh search (bypass cache)</span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Check this to ignore cached results and run a brand new search. Uses 4 credits.
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 <button

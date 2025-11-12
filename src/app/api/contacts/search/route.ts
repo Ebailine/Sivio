@@ -85,9 +85,10 @@ export async function POST(request: Request) {
       jobTitle: body.jobTitle,
       jobType: body.jobType,
       hasDescription: !!body.jobDescription,
+      bypassCache: body.bypassCache,
     })
 
-    const { company, domain, jobId, jobTitle, jobType, jobDescription, location } = body
+    const { company, domain, jobId, jobTitle, jobType, jobDescription, location, bypassCache } = body
 
     if (!company) {
       return NextResponse.json(
@@ -288,34 +289,41 @@ export async function POST(request: Request) {
     }
 
     // STEP 3: Check cache first (high-quality contacts only)
-    console.log('Step 3: Checking cache...')
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    // Skip cache if user requested fresh search
+    if (!bypassCache) {
+      console.log('Step 3: Checking cache...')
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const { data: cachedContacts } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('company_domain', searchDomain)
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .gte('relevance_score', 70) // Only high-quality cached contacts
-      .order('relevance_score', { ascending: false })
-      .limit(4)
+      const { data: cachedContacts } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('company_domain', searchDomain)
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .gte('relevance_score', 70) // Only high-quality cached contacts
+        .order('relevance_score', { ascending: false })
+        .limit(4)
 
-    if (cachedContacts && cachedContacts.length >= 2) {
-      console.log(`Using ${cachedContacts.length} cached contacts (no charge)`)
-      return NextResponse.json({
-        success: true,
-        contacts: cachedContacts,
-        creditsRemaining: user.credits,
-        remainingCredits: user.credits,
-        cached: true,
-        creditsDeducted: 0,
-        strategy: {
-          reasoning: strategy.reasoning,
-          confidence: strategy.confidenceScore,
-          approach: strategy.approach,
-        },
-      })
+      if (cachedContacts && cachedContacts.length >= 2) {
+        console.log(`✅ Using ${cachedContacts.length} cached contacts (no charge)`)
+        return NextResponse.json({
+          success: true,
+          contacts: cachedContacts,
+          creditsRemaining: user.credits,
+          remainingCredits: user.credits,
+          cached: true,
+          creditsDeducted: 0,
+          strategy: {
+            reasoning: strategy.reasoning,
+            confidence: strategy.confidenceScore,
+            approach: strategy.approach,
+          },
+        })
+      }
+
+      console.log('⚠️  No high-quality cached contacts found, running fresh search...')
+    } else {
+      console.log('⚡ BYPASS CACHE: User requested fresh search, skipping cache check...')
     }
 
     // STEP 3.5 + 4: PARALLEL Processing (LinkedIn + Snov.io)
