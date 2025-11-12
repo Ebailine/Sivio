@@ -10,7 +10,9 @@ import { snovClient } from '@/lib/snov/client'
 import { contactReasoner } from '@/lib/services/contact-reasoner'
 import { jobAnalyzer } from '@/lib/services/job-analyzer'
 import { companyResearcher } from '@/lib/services/company-researcher'
-import { linkedInScraper } from '@/lib/services/linkedin-scraper'
+// REMOVED FAKE NAME GENERATOR - was generating fictional people like "Priya Patel", "Ahmed Hassan"
+// import { linkedInScraper } from '@/lib/services/linkedin-scraper'
+import { linkedInContactFinder } from '@/lib/services/linkedin-contact-finder'
 import { creditTracker } from '@/lib/services/credit-tracker'
 import { emailPatternGenerator } from '@/lib/services/email-pattern-generator'
 
@@ -340,16 +342,16 @@ export async function POST(request: Request) {
     try {
       // Run both operations in parallel with Promise.all
       const [linkedInResults, snovResults_] = await Promise.all([
-        // LinkedIn AI Analysis (FREE)
+        // LinkedIn REAL CONTACT SEARCH (uses web search to find actual people)
         (async () => {
           try {
-            console.log('  🔍 [LinkedIn] Starting AI analysis...')
-            const contacts = await linkedInScraper.scrapeCompanyEmployees(
+            console.log('  🔍 [LinkedIn] Searching for REAL employees via web search...')
+            const contacts = await linkedInContactFinder.findRealContacts(
               company,
               searchDomain,
               jobTitle
             )
-            console.log(`  ✅ [LinkedIn] Found ${contacts.length} likely employees (${contacts.filter(c => c.isHRRole).length} HR roles)`)
+            console.log(`  ✅ [LinkedIn] Found ${contacts.length} REAL people (${contacts.filter(c => c.isHRRole).length} HR roles)`)
             return contacts
           } catch (error) {
             console.error('  ⚠️  [LinkedIn] Error (non-fatal):', error)
@@ -373,6 +375,34 @@ export async function POST(request: Request) {
 
       linkedInContacts = linkedInResults
       snovResults = snovResults_
+
+      // Add company website team members as a third data source
+      if (companyData && companyData.teamMembers.length > 0) {
+        console.log(`  🏢 [Company Website] Found ${companyData.teamMembers.length} team members from website`)
+
+        // Convert team members to contact format
+        const websiteContacts = companyData.teamMembers.map(tm => ({
+          name: tm.name,
+          firstName: tm.name.split(' ')[0],
+          lastName: tm.name.split(' ').slice(1).join(' ') || '',
+          title: tm.title,
+          company: companyName,
+          linkedinUrl: tm.linkedinUrl || null,
+          email: tm.email || null,
+          isHRRole: tm.isHiringRole,
+          isTeamRole: !tm.isHiringRole,
+          relevanceScore: tm.isHiringRole ? 95 : 70,
+          reasoning: `Found on company website - ${tm.title}`,
+          dataSource: 'company_website' as const
+        }))
+
+        // Merge website contacts with LinkedIn contacts (dedupe by name)
+        const existingNames = new Set(linkedInContacts.map(c => c.name.toLowerCase()))
+        const newWebsiteContacts = websiteContacts.filter(c => !existingNames.has(c.name.toLowerCase()))
+
+        linkedInContacts = [...linkedInContacts, ...newWebsiteContacts]
+        console.log(`  ✅ [Company Website] Added ${newWebsiteContacts.length} unique contacts (${newWebsiteContacts.filter(c => c.isHRRole).length} HR roles)`)
+      }
 
       measureStep('PARALLEL Processing (LinkedIn + Snov.io)', parallelStart)
       const timeSaved = parallelStart // Estimate: would have been ~5-7s sequential, now ~3-4s parallel
