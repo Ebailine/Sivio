@@ -38,12 +38,33 @@ class LinkedInScraper {
   ): Promise<LinkedInContact[]> {
     console.log(`[LinkedInScraper] 🔍 Analyzing ${companyName} employees (FREE - no credits used)`)
 
+    // Detect company size to generate appropriate roles
+    const companySize = this.estimateCompanySize(companyName, domain)
+    console.log(`[LinkedInScraper] Estimated company size: ${companySize}`)
+
     const prompt = `You are a LinkedIn research assistant with deep knowledge of company structures and naming patterns across industries.
 
 COMPANY ANALYSIS:
 - Name: ${companyName}
 - Domain: ${domain}
+- Estimated Size: ${companySize}
 ${jobTitle ? `- Target Role: ${jobTitle}` : ''}
+
+CRITICAL COMPANY SIZE RULES:
+
+**SMALL COMPANIES (<50 employees)** like wealth advisors, local firms, startups:
+- DO NOT generate corporate HR titles like "Talent Acquisition Specialist" or "HR Business Partner"
+- INSTEAD generate: "Office Manager", "Operations Manager", "Managing Partner", "Branch Manager"
+- Example for Fletcher Wealth Advisors: "Office Manager" NOT "Senior Talent Acquisition Specialist"
+- Small firms don't have dedicated HR - office managers handle hiring
+
+**MEDIUM COMPANIES (50-500 employees)**:
+- May have 1-2 HR people: "HR Manager", "Recruiter"
+- Also generate operations/admin roles
+
+**LARGE COMPANIES (500+ employees)**:
+- Can have dedicated recruiting teams: "Senior Recruiter", "Talent Acquisition Specialist"
+- Multiple HR business partners
 
 CRITICAL INSTRUCTIONS:
 
@@ -64,21 +85,29 @@ companyName.toLowerCase().includes('hantz') ? '   - Hantz Group is FINANCIAL SER
 companyName.toLowerCase().includes('tech') || companyName.toLowerCase().includes('software') ? '   - Tech company - diverse international names, engineering managers' :
 '   - Analyze company type and generate appropriate names'}
 
-TASK: List 8-12 REALISTIC employee profiles who would handle job applications for this role.
+TASK: List 6-10 REALISTIC employee profiles who would handle job applications.
 
-PRIORITIZE (in order):
-1. HR/Recruiting roles (3-4 people) - HIGHEST PRIORITY
-   - HR Manager, Recruiter, Talent Acquisition Manager, People Operations Lead
-   - These are PRIMARY targets who ACTUALLY review applications
-   - Use titles like: "Senior Recruiter", "HR Business Partner", "Talent Acquisition Specialist"
+PRIORITIZE BASED ON COMPANY SIZE:
+
+**FOR SMALL COMPANIES (<50 employees) like ${companySize === 'small' ? companyName : 'wealth advisors, local firms'}:**
+1. Operations/Admin (2-3 people) - HIGHEST PRIORITY
+   - "Office Manager", "Operations Manager", "Executive Assistant"
+   - These people ACTUALLY handle hiring at small firms
+   - NOT "Talent Acquisition Specialist" - too corporate!
+
+2. Leadership/Partners (2-3 people)
+   - "Managing Partner", "Branch Manager", "Regional Manager"
+   - Senior advisors/professionals in the role: "${jobTitle || 'Senior Advisor'}"
+   - These people make final hiring decisions
+
+**FOR MEDIUM/LARGE COMPANIES (50+ employees):**
+1. HR/Recruiting roles (3-4 people)
+   - "HR Manager", "Recruiter", "Talent Acquisition Specialist"
+   - Use corporate HR titles ONLY for larger companies
 
 2. Team/Department roles (2-3 people)
-   - Hiring Manager, Team Lead, Department Head for the role
+   - Hiring managers, team leads
    ${jobTitle ? `- Related to: ${jobTitle}` : ''}
-   - Use specific titles: "Engineering Manager", "Sales Director", "Operations Manager"
-
-3. Leadership (1-2 people, only if small company <50 employees)
-   - CEO, Founder, VP (only for very small companies)
 
 INSTRUCTIONS FOR NAMES:
 - Use DIVERSE, realistic names (mix of genders, ethnicities)
@@ -96,7 +125,33 @@ INSTRUCTIONS FOR ACCURACY:
 - Give executives relevanceScore 50-60 (unless small company)
 - Department should be specific: "Human Resources", "Engineering", "Sales", etc.
 
-Return ONLY valid JSON array:
+Return ONLY valid JSON array.
+
+EXAMPLE FOR SMALL COMPANY (wealth advisor, local firm):
+[
+  {
+    "name": "Jennifer Williams",
+    "title": "Office Manager",
+    "department": "Operations",
+    "profileUrl": null,
+    "isHRRole": false,
+    "isTeamRole": true,
+    "relevanceScore": 95,
+    "reasoning": "Office manager handles hiring, onboarding, and HR tasks at small firm"
+  },
+  {
+    "name": "Michael Patterson",
+    "title": "Managing Partner",
+    "department": "Leadership",
+    "profileUrl": null,
+    "isHRRole": false,
+    "isTeamRole": true,
+    "relevanceScore": 90,
+    "reasoning": "Managing partner makes final hiring decisions"
+  }
+]
+
+EXAMPLE FOR LARGE COMPANY (tech, recruiting firm):
 [
   {
     "name": "Julie Rutgers",
@@ -106,17 +161,7 @@ Return ONLY valid JSON array:
     "isHRRole": true,
     "isTeamRole": false,
     "relevanceScore": 95,
-    "reasoning": "Senior recruiter - directly handles candidate placement"
-  },
-  {
-    "name": "Jennifer Martinez",
-    "title": "Talent Acquisition Specialist",
-    "department": "Recruiting",
-    "profileUrl": null,
-    "isHRRole": true,
-    "isTeamRole": false,
-    "relevanceScore": 92,
-    "reasoning": "Recruiting specialist at company"
+    "reasoning": "Senior recruiter at large company - directly handles candidate placement"
   }
 ]`
 
@@ -159,23 +204,50 @@ Return ONLY valid JSON array:
 
   /**
    * Estimate company size from domain/name
-   * Helps determine if we need many HR people or just founders
+   * Helps determine if we need many HR people or just office managers
    */
-  private estimateCompanySize(companyName: string): 'small' | 'medium' | 'large' {
-    const smallIndicators = ['inc', 'llc', 'group', 'partners']
-    const largeIndicators = ['global', 'international', 'corporation', 'corp']
-
+  private estimateCompanySize(companyName: string, domain: string): 'small' | 'medium' | 'large' {
     const nameLower = companyName.toLowerCase()
+    const domainLower = domain.toLowerCase()
 
-    if (largeIndicators.some(i => nameLower.includes(i))) {
+    // SMALL company indicators (most specific first)
+    const smallBusinessTypes = [
+      'wealth advisor', 'wealth management', 'financial advisor',
+      'insurance agency', 'real estate', 'law firm', 'accounting firm',
+      'dental', 'medical practice', 'clinic',
+      'consulting', 'studio', 'agency',
+      'llc', 'pllc', 'associates', 'partners'
+    ]
+
+    // LARGE company indicators
+    const largeIndicators = [
+      'global', 'international', 'worldwide',
+      'corporation', 'corp', 'inc.',
+      'enterprises', 'holdings',
+      'fortune', 'nasdaq', 'nyse'
+    ]
+
+    // MEDIUM tech indicators
+    const mediumTechIndicators = ['tech', 'software', 'solutions', 'systems', 'technologies']
+
+    // Check for large companies first
+    if (largeIndicators.some(i => nameLower.includes(i) || domainLower.includes(i))) {
       return 'large'
     }
 
-    if (smallIndicators.some(i => nameLower.includes(i))) {
+    // Check for small business types (wealth advisors, local firms, etc.)
+    if (smallBusinessTypes.some(i => nameLower.includes(i) || domainLower.includes(i))) {
+      console.log(`[LinkedInScraper] Detected SMALL business type: ${companyName}`)
       return 'small'
     }
 
-    return 'medium'
+    // Tech companies are usually medium unless proven large
+    if (mediumTechIndicators.some(i => nameLower.includes(i))) {
+      return 'medium'
+    }
+
+    // Default to small (most companies are small)
+    return 'small'
   }
 }
 
