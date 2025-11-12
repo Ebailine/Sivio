@@ -24,6 +24,10 @@ export interface LinkedInContact {
   isTeamRole: boolean
   relevanceScore: number
   reasoning: string
+  // Confidence scoring (0-100)
+  confidenceScore?: number // How confident we are this person exists
+  confidenceLevel?: 'high' | 'medium' | 'low' // User-friendly label
+  verificationStatus?: 'verified' | 'inferred' | 'generated' // How we found them
 }
 
 class LinkedInScraper {
@@ -191,7 +195,16 @@ EXAMPLE FOR LARGE COMPANY (tech, recruiting firm):
 
       const contacts: LinkedInContact[] = JSON.parse(jsonText)
 
+      // Add confidence scoring to AI-generated contacts
+      // LOW confidence (30-40) since names are inferred, not verified
+      contacts.forEach(contact => {
+        contact.confidenceScore = 35 // Low confidence - AI-generated name
+        contact.confidenceLevel = 'low'
+        contact.verificationStatus = 'generated'
+      })
+
       console.log(`[LinkedInScraper] ✅ Found ${contacts.length} likely employees (${contacts.filter(c => c.isHRRole).length} HR, ${contacts.filter(c => c.isTeamRole).length} team)`)
+      console.log(`[LinkedInScraper] ℹ️  Confidence: LOW (35/100) - AI-generated names, not verified`)
 
       // Sort by relevance score
       return contacts.sort((a, b) => b.relevanceScore - a.relevanceScore)
