@@ -397,11 +397,11 @@ export async function POST(request: Request) {
         }))
 
         // Merge website contacts with LinkedIn contacts (dedupe by name)
-        const existingNames = new Set(linkedInContacts.map(c => c.name.toLowerCase()))
-        const newWebsiteContacts = websiteContacts.filter(c => !existingNames.has(c.name.toLowerCase()))
+        const existingNames = new Set(linkedInContacts.map((c: any) => c.name.toLowerCase()))
+        const newWebsiteContacts = websiteContacts.filter((c: any) => !existingNames.has(c.name.toLowerCase()))
 
         linkedInContacts = [...linkedInContacts, ...newWebsiteContacts]
-        console.log(`  ✅ [Company Website] Added ${newWebsiteContacts.length} unique contacts (${newWebsiteContacts.filter(c => c.isHRRole).length} HR roles)`)
+        console.log(`  ✅ [Company Website] Added ${newWebsiteContacts.length} unique contacts (${newWebsiteContacts.filter((c: any) => c.isHRRole).length} HR roles)`)
       }
 
       measureStep('PARALLEL Processing (LinkedIn + Snov.io)', parallelStart)
