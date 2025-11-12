@@ -386,7 +386,7 @@ export async function POST(request: Request) {
           firstName: tm.name.split(' ')[0],
           lastName: tm.name.split(' ').slice(1).join(' ') || '',
           title: tm.title,
-          company: companyName,
+          company: company,
           linkedinUrl: tm.linkedinUrl || null,
           email: tm.email || null,
           isHRRole: tm.isHiringRole,
