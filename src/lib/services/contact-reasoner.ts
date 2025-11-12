@@ -401,14 +401,38 @@ Return ONLY valid JSON array (no markdown, no explanations):
 
     const rankings: ContactAnalysis[] = JSON.parse(jsonText)
 
-    // Map rankings back to contacts
+    // Map rankings back to contacts and boost verified contacts
     let rankedContacts = rankings
       .filter(r => r.recommendedAction === 'include')
-      .map(r => ({
-        ...contacts[r.contactIndex],
-        analysis: r,
-      }))
-      .sort((a, b) => b.analysis.relevanceScore - a.analysis.relevanceScore)
+      .map(r => {
+        const contact = contacts[r.contactIndex]
+
+        // Calculate boosted score based on verification status
+        let boostedScore = r.relevanceScore
+
+        // Boost HIGH confidence (verified email) contacts by +15 points
+        if (contact.confidence_level === 'high' || contact.confidence_score >= 80) {
+          boostedScore += 15
+          console.log(`  ✅ Boosted "${contact.full_name}" from ${r.relevanceScore} → ${boostedScore} (HIGH confidence, verified email)`)
+        }
+        // Boost MEDIUM confidence contacts by +8 points
+        else if (contact.confidence_level === 'medium' || contact.confidence_score >= 60) {
+          boostedScore += 8
+          console.log(`  ⚠️  Boosted "${contact.full_name}" from ${r.relevanceScore} → ${boostedScore} (MEDIUM confidence)`)
+        }
+        // No boost for LOW confidence (AI-generated names)
+
+        return {
+          ...contact,
+          analysis: {
+            ...r,
+            // Store both original and boosted scores
+            originalRelevanceScore: r.relevanceScore,
+            relevanceScore: boostedScore,
+          },
+        }
+      })
+      .sort((a, b) => b.analysis.relevanceScore - a.analysis.relevanceScore) // Sort by BOOSTED score
       .slice(0, 4) // Top 4 only
 
     // FALLBACK: If AI returned 0 contacts but we have contacts, use them anyway
