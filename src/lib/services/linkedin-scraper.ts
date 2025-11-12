@@ -59,8 +59,7 @@ CRITICAL INSTRUCTIONS:
    - Include realistic surnames that match first name demographics
 
 3. **COMPANY-SPECIFIC RESEARCH**:
-${companyName.toLowerCase().includes('gpac') ? '   - Gpac is a RECRUITING FIRM - they have many recruiters with names like Julie, Jennifer, Rachel
-   - Focus on: "Senior Recruiter", "Talent Acquisition Specialist", "Recruiting Manager"' :
+${companyName.toLowerCase().includes('gpac') ? '   - Gpac is a RECRUITING FIRM - they have many recruiters with names like Julie, Jennifer, Rachel\n   - Focus on: "Senior Recruiter", "Talent Acquisition Specialist", "Recruiting Manager"' :
 companyName.toLowerCase().includes('hantz') ? '   - Hantz Group is FINANCIAL SERVICES - professional names, focus on advisors and managers' :
 companyName.toLowerCase().includes('tech') || companyName.toLowerCase().includes('software') ? '   - Tech company - diverse international names, engineering managers' :
 '   - Analyze company type and generate appropriate names'}
@@ -100,24 +99,24 @@ INSTRUCTIONS FOR ACCURACY:
 Return ONLY valid JSON array:
 [
   {
-    "name": "${companyName.toLowerCase().includes('gpac') ? 'Julie Rutgers' : companyName.toLowerCase().includes('hantz') ? 'Jennifer Williams' : 'Rachel Martinez'}",
-    "title": "${companyName.toLowerCase().includes('gpac') ? 'Senior Recruiter' : 'HR Manager'}",
-    "department": "${companyName.toLowerCase().includes('gpac') ? 'Talent Acquisition' : 'Human Resources'}",
+    "name": "Julie Rutgers",
+    "title": "Senior Recruiter",
+    "department": "Talent Acquisition",
     "profileUrl": null,
     "isHRRole": true,
     "isTeamRole": false,
     "relevanceScore": 95,
-    "reasoning": "${companyName.toLowerCase().includes('gpac') ? 'Senior recruiter at staffing firm - directly handles candidate placement' : 'HR Manager likely reviews all applications'}"
+    "reasoning": "Senior recruiter - directly handles candidate placement"
   },
   {
-    "name": "${companyName.toLowerCase().includes('gpac') ? 'Jennifer Martinez' : companyName.toLowerCase().includes('tech') ? 'Priya Patel' : 'Michael Thompson'}",
-    "title": "${jobTitle && jobTitle.toLowerCase().includes('engineer') ? 'Engineering Manager' : jobTitle && jobTitle.toLowerCase().includes('advisor') ? 'Senior Financial Advisor' : 'Talent Acquisition Specialist'}",
-    "department": "${jobTitle && jobTitle.toLowerCase().includes('engineer') ? 'Engineering' : companyName.toLowerCase().includes('gpac') ? 'Recruiting' : 'Operations'}",
+    "name": "Jennifer Martinez",
+    "title": "Talent Acquisition Specialist",
+    "department": "Recruiting",
     "profileUrl": null,
-    "isHRRole": ${companyName.toLowerCase().includes('gpac') ? 'true' : 'false'},
-    "isTeamRole": ${companyName.toLowerCase().includes('gpac') ? 'false' : 'true'},
-    "relevanceScore": ${companyName.toLowerCase().includes('gpac') ? '92' : '80'},
-    "reasoning": "${companyName.toLowerCase().includes('gpac') ? 'Recruiting specialist at staffing company' : 'Hiring manager or team lead for the role'}"
+    "isHRRole": true,
+    "isTeamRole": false,
+    "relevanceScore": 92,
+    "reasoning": "Recruiting specialist at company"
   }
 ]`
 

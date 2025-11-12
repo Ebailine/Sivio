@@ -155,7 +155,8 @@ export class EmailPatternGenerator {
     }
 
     console.log(`[Pattern Generator] Complete: ${totalVerifications} verifications used`)
-    console.log(`[Pattern Generator] Result: ${results.filter(r => r.generatedEmail?.status === 'valid').length} valid emails`)
+    const validCount = results.filter(r => (r as any).generatedEmail?.status === 'valid').length
+    console.log(`[Pattern Generator] Result: ${validCount} valid emails`)
 
     return results
   }
