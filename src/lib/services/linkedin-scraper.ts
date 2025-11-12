@@ -225,23 +225,73 @@ EXAMPLE FOR LARGE COMPANY (tech, recruiting firm):
 
     // SMALL company indicators (most specific first)
     const smallBusinessTypes = [
-      'wealth advisor', 'wealth management', 'financial advisor',
-      'insurance agency', 'real estate', 'law firm', 'accounting firm',
-      'dental', 'medical practice', 'clinic',
-      'consulting', 'studio', 'agency',
-      'llc', 'pllc', 'associates', 'partners'
+      // Financial Services
+      'wealth advisor', 'wealth management', 'financial advisor', 'financial planning',
+      'insurance agency', 'insurance broker', 'investment advisor',
+
+      // Legal Services
+      'law firm', 'law office', 'legal services', 'attorney', 'lawyer',
+      'legal group', 'legal associates',
+
+      // Healthcare Services
+      'dental', 'dentist', 'medical practice', 'clinic', 'chiropractic',
+      'physical therapy', 'veterinary', 'pharmacy', 'urgent care',
+      'medical group', 'healthcare practice',
+
+      // Real Estate
+      'real estate', 'realty', 'property management', 'real estate group',
+      'realty partners', 'brokerage',
+
+      // Professional Services
+      'accounting firm', 'cpa', 'tax services', 'bookkeeping',
+      'consulting', 'consulting group', 'consultancy', 'advisors',
+
+      // Creative & Design
+      'studio', 'design studio', 'creative agency', 'marketing agency',
+      'advertising agency', 'pr agency',
+
+      // Hospitality & Food Service
+      'restaurant', 'cafe', 'bistro', 'catering', 'food services',
+      'hotel', 'inn', 'bed and breakfast',
+
+      // Retail & Consumer Services
+      'boutique', 'salon', 'spa', 'fitness', 'gym', 'wellness center',
+      'barber shop', 'retail shop',
+
+      // Construction & Trades
+      'contractors', 'construction company', 'builders', 'remodeling',
+      'hvac', 'plumbing', 'electrical services',
+
+      // General Small Business Indicators
+      'llc', 'pllc', 'associates', 'partners', 'group practice',
+      'family owned', 'local', 'community'
     ]
 
     // LARGE company indicators
     const largeIndicators = [
-      'global', 'international', 'worldwide',
-      'corporation', 'corp', 'inc.',
-      'enterprises', 'holdings',
-      'fortune', 'nasdaq', 'nyse'
+      'global', 'international', 'worldwide', 'multinational',
+      'corporation', 'corp', 'inc.', 'incorporated',
+      'enterprises', 'holdings', 'group inc',
+      'fortune', 'nasdaq', 'nyse', 's&p',
+      'public company', 'publicly traded',
+      // Large staffing/recruiting firms
+      'staffing', 'recruiting firm', 'workforce solutions',
+      // Large chains
+      'chain', 'franchise', 'nationwide'
     ]
 
-    // MEDIUM tech indicators
-    const mediumTechIndicators = ['tech', 'software', 'solutions', 'systems', 'technologies']
+    // MEDIUM company indicators
+    const mediumTechIndicators = [
+      'tech', 'software', 'solutions', 'systems', 'technologies',
+      'platform', 'saas', 'cloud', 'analytics', 'data',
+      'digital', 'innovation', 'ai', 'machine learning'
+    ]
+
+    const mediumServiceIndicators = [
+      'services inc', 'professional services',
+      'management company', 'consulting firm',
+      'regional', 'multi-location'
+    ]
 
     // Check for large companies first
     if (largeIndicators.some(i => nameLower.includes(i) || domainLower.includes(i))) {
@@ -254,12 +304,15 @@ EXAMPLE FOR LARGE COMPANY (tech, recruiting firm):
       return 'small'
     }
 
-    // Tech companies are usually medium unless proven large
-    if (mediumTechIndicators.some(i => nameLower.includes(i))) {
+    // Check for medium-sized companies
+    if (mediumTechIndicators.some(i => nameLower.includes(i)) ||
+        mediumServiceIndicators.some(i => nameLower.includes(i))) {
+      console.log(`[LinkedInScraper] Detected MEDIUM company: ${companyName}`)
       return 'medium'
     }
 
     // Default to small (most companies are small)
+    console.log(`[LinkedInScraper] Defaulting to SMALL company: ${companyName}`)
     return 'small'
   }
 }
