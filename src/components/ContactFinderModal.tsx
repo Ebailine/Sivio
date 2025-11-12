@@ -419,7 +419,7 @@ export default function ContactFinderModal({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {contacts.map((contact) => (
                     <ContactCard
                       key={contact.id}
@@ -428,6 +428,52 @@ export default function ContactFinderModal({
                       isSelected={selectedContacts.has(contact.id)}
                     />
                   ))}
+                </div>
+
+                {/* Re-search Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Not happy with these results?</h4>
+
+                  {/* Bypass Cache Checkbox */}
+                  <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={bypassCache}
+                        onChange={(e) => setBypassCache(e.target.checked)}
+                        className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">Force fresh search (bypass cache)</span>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Run a brand new search with updated data. Uses 4 credits.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSearchComplete(false)
+                      setContacts([])
+                      setError(null)
+                      handleSearch()
+                    }}
+                    disabled={loading || userCredits < CREDIT_COST_PER_CONTACT}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Re-searching...
+                      </>
+                    ) : (
+                      <>
+                        <Search size={20} />
+                        Run Fresh Search
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
