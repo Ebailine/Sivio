@@ -381,7 +381,7 @@ export async function POST(request: Request) {
         console.log(`  🏢 [Company Website] Found ${companyData.teamMembers.length} team members from website`)
 
         // Convert team members to contact format
-        const websiteContacts = companyData.teamMembers.map(tm => ({
+        const websiteContacts = companyData.teamMembers.map((tm: any) => ({
           name: tm.name,
           firstName: tm.name.split(' ')[0],
           lastName: tm.name.split(' ').slice(1).join(' ') || '',
