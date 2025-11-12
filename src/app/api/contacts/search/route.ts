@@ -18,10 +18,22 @@ const CREDIT_COST_PER_CONTACT = 1
 const CREDIT_COST_PER_EMAIL_VALIDATION = 1
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+  const timings: Record<string, number> = {}
+
+  const measureStep = (stepName: string, startTime: number) => {
+    const duration = Date.now() - startTime
+    timings[stepName] = duration
+    console.log(`⏱️  ${stepName}: ${duration}ms`)
+    return duration
+  }
+
   console.log('=== AI-Powered Contact Search Started ===')
 
   try {
+    const stepStart = Date.now()
     const { userId } = await auth()
+    measureStep('Authentication', stepStart)
     if (!userId) {
       console.error('No user ID - unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -104,6 +116,7 @@ export async function POST(request: Request) {
       try {
         // Analyze the full job posting
         console.log('Step 0a: Analyzing full job posting from URL...')
+        let step0aStart = Date.now()
         jobAnalysis = await jobAnalyzer.quickAnalyze({
           title: job.title,
           company: job.company,
@@ -111,6 +124,7 @@ export async function POST(request: Request) {
           description: job.description || '',
           url: fullJobUrl,
         })
+        measureStep('Job Analysis', step0aStart)
 
         console.log('✅ Job analysis complete:')
         console.log(`   - Company domain: ${jobAnalysis.company.domain}`)
@@ -120,10 +134,12 @@ export async function POST(request: Request) {
 
         // Research the company deeply
         console.log('Step 0b: Deep company research...')
+        let step0bStart = Date.now()
         companyData = await companyResearcher.researchCompany(
           jobAnalysis.company.domain,
           jobAnalysis.company.name
         )
+        measureStep('Company Research', step0bStart)
 
         console.log(`✅ Company research complete:`)
         console.log(`   - ${companyData.teamMembers.length} team members identified`)
@@ -169,7 +185,9 @@ export async function POST(request: Request) {
       console.log('⚠️  No enhanced context - using basic job info only')
     }
 
+    let step1Start = Date.now()
     const strategy = await contactReasoner.analyzeJob(jobContext, enhancedContext)
+    measureStep('AI Strategy Generation', step1Start)
     console.log('Strategy confidence:', strategy.confidenceScore)
     if (strategy.specificPeople && strategy.specificPeople.length > 0) {
       console.log('🎯 Targeting specific people:', strategy.specificPeople?.slice(0, 3).join(', ') || 'None')
@@ -244,11 +262,13 @@ export async function POST(request: Request) {
 
     let linkedInContacts: any[] = []
     try {
+      let step3_5Start = Date.now()
       linkedInContacts = await linkedInScraper.scrapeCompanyEmployees(
         company,
         searchDomain,
         jobTitle
       )
+      measureStep('LinkedIn Analysis (AI)', step3_5Start)
       console.log(`✅ LinkedIn analysis found ${linkedInContacts.length} likely employees`)
       console.log(`   - ${linkedInContacts.filter(c => c.isHRRole).length} HR/recruiting roles`)
       console.log(`   - ${linkedInContacts.filter(c => c.isTeamRole).length} team/department roles`)
@@ -264,6 +284,56 @@ export async function POST(request: Request) {
       // Continue without LinkedIn data - not critical
     }
 
+    // STEP 3.6: PROACTIVE Email Verification for Top LinkedIn Contacts
+    // Verify AI-generated names BEFORE relying on them
+    if (linkedInContacts && linkedInContacts.length > 0) {
+      console.log('=== Step 3.6: PROACTIVE Email Verification (NEW) ===')
+      console.log('💡 Validating AI-generated names by testing email patterns...')
+
+      try {
+        let step3_6Start = Date.now()
+        const topContacts = linkedInContacts.slice(0, 4) // Top 4 only
+        const verificationResults = await emailPatternGenerator.generateVerifiedEmails(
+          topContacts,
+          searchDomain,
+          2 // Max 2 pattern tests per contact to control costs
+        )
+        measureStep('Proactive Email Verification', step3_6Start)
+
+        // Boost confidence for verified contacts
+        verificationResults.forEach((contact: any) => {
+          if (contact.generatedEmail?.status === 'valid') {
+            // VERIFIED email found - boost to HIGH confidence
+            contact.confidenceScore = 85
+            contact.confidenceLevel = 'high'
+            contact.verificationStatus = 'verified'
+            console.log(`   ✅ VERIFIED: ${contact.name} - ${contact.generatedEmail.email}`)
+          } else if (contact.generatedEmail?.status === 'catch-all') {
+            // Catch-all domain - boost to MEDIUM confidence
+            contact.confidenceScore = 65
+            contact.confidenceLevel = 'medium'
+            contact.verificationStatus = 'inferred'
+            console.log(`   ⚠️  CATCH-ALL: ${contact.name} - ${contact.generatedEmail.email}`)
+          }
+          // If no email found, keep LOW confidence (35) from linkedin-scraper
+        })
+
+        // Update linkedInContacts with boosted confidence
+        const verifiedCount = verificationResults.filter((c: any) => c.generatedEmail?.status === 'valid').length
+        console.log(`✅ Proactive verification complete: ${verifiedCount}/${topContacts.length} contacts verified`)
+
+        // Replace top contacts with verified versions
+        linkedInContacts = [
+          ...verificationResults,
+          ...linkedInContacts.slice(4)
+        ]
+
+      } catch (error) {
+        console.error('⚠️  Proactive verification failed (non-fatal):', error)
+        // Continue without verification - not critical
+      }
+    }
+
     // STEP 4: Execute optimized Snov.io search (1 credit = 50 emails)
     console.log('=== Step 4: Snov.io Domain Search (1 credit) ===')
     console.log('Domain to search:', searchDomain)
@@ -275,8 +345,10 @@ export async function POST(request: Request) {
 
     let snovResults
     try {
+      let step4Start = Date.now()
       // Increased from 50 to 100 to get more contacts including HR
       snovResults = await snovClient.searchByDomain(searchDomain, 100)
+      measureStep('Snov.io Domain Search', step4Start)
       console.log(`✅ Snov.io returned ${snovResults?.length || 0} raw contacts`)
 
       if (snovResults && snovResults.length > 0) {
@@ -649,12 +721,14 @@ export async function POST(request: Request) {
     // STEP 5: AI ranks and filters to top 1-4
     // NOW USES ENHANCED DATA to prioritize specific people from org chart
     console.log('Step 5: AI ranking contacts with enhanced matching...')
+    let step5Start = Date.now()
     const rankedContacts = await contactReasoner.rankContacts(
       formattedContacts,
       jobContext,
       strategy,
       enhancedContext
     )
+    measureStep('AI Contact Ranking', step5Start)
 
     if (rankedContacts.length === 0) {
       return NextResponse.json(
@@ -794,6 +868,15 @@ export async function POST(request: Request) {
     console.log(`📍 Cost per Contact: $${costPerContactUSD.toFixed(4)}`)
     console.log(`🎯 Budget Target: $0.20`)
     console.log(`${totalCostUSD < 0.20 ? '✅ UNDER BUDGET' : '⚠️  OVER BUDGET'}`)
+
+    const totalTime = Date.now() - startTime
+    console.log('=== PERFORMANCE SUMMARY ===')
+    console.log(`🕐 Total Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`)
+    console.log('Breakdown:')
+    Object.entries(timings).forEach(([step, duration]) => {
+      const percentage = ((duration / totalTime) * 100).toFixed(1)
+      console.log(`   ${step}: ${duration}ms (${percentage}%)`)
+    })
     console.log('=== AI Contact Search Complete ===')
 
     return NextResponse.json({
@@ -810,6 +893,10 @@ export async function POST(request: Request) {
         approach: strategy.approach,
         targetTitles: strategy.targetTitles,
       },
+      performance: {
+        totalTimeMs: totalTime,
+        breakdown: timings
+      }
     })
 
   } catch (error: any) {

@@ -73,17 +73,42 @@ CRITICAL COMPANY SIZE RULES:
 CRITICAL INSTRUCTIONS:
 
 1. **INDUSTRY-SPECIFIC NAMES**: Generate names that match this company's industry demographics
-   - Recruiting firms (like Gpac): Julie, Jennifer, Rachel, Michael, David, Christopher
-   - Tech companies: Wei, Priya, Ahmed, Sofia, Carlos, Emma
-   - Healthcare: Maria, Elizabeth, James, Robert, Linda
-   - Finance: Michael, Jennifer, David, Sarah, William
+
+   RECRUITING FIRMS (like Gpac):
+   - Female: Julie Rutgers, Jennifer Martinez, Rachel Patterson, Amanda Stevens, Lisa Thompson, Michelle Carter, Nicole Rodriguez, Jessica Morris, Ashley Turner, Danielle Cooper
+   - Male: Michael Bradley, Christopher Hayes, David Coleman, Brian Foster, Matthew Sullivan, James Mitchell, Kevin Barnes, Ryan Murphy, Andrew Phillips, Daniel Richardson
+
+   TECH COMPANIES (SaaS, cloud, AI):
+   - Female: Priya Patel, Wei Zhang, Sofia Rodriguez, Emma Chen, Maya Singh, Jessica Liu, Aisha Hassan, Ana Martinez, Yuki Tanaka, Sarah Nguyen
+   - Male: Wei Chen, Ahmed Hassan, Carlos Rodriguez, David Kim, Raj Sharma, Alex Petrov, Luis Garcia, Kenji Yamamoto, Marcus Johnson, Omar Abdullah
+
+   FINANCIAL SERVICES (wealth advisors, investment):
+   - Female: Jennifer Williams, Michelle Anderson, Rebecca Davis, Catherine Morgan, Elizabeth Bennett, Laura Patterson, Amanda Clark, Victoria Hayes, Stephanie Brooks, Christine Murphy
+   - Male: Michael Patterson, David Thompson, Robert Mitchell, William Harrison, James Anderson, Christopher Martin, Matthew Reynolds, Daniel Foster, Richard Coleman, Jonathan Barnes
+
+   HEALTHCARE (medical, dental, veterinary):
+   - Female: Maria Garcia, Elizabeth Martinez, Linda Rodriguez, Jennifer Lopez, Patricia Davis, Nancy Wilson, Michelle Thompson, Susan Anderson, Karen Moore, Lisa Taylor
+   - Male: James Anderson, Robert Williams, Michael Johnson, David Brown, Christopher Davis, Daniel Miller, Matthew Garcia, Joseph Martinez, Anthony Rodriguez, Mark Thompson
+
+   LEGAL SERVICES (law firms):
+   - Female: Katherine Morrison, Rebecca Sullivan, Elizabeth Hayes, Jennifer Campbell, Sarah Mitchell, Catherine Foster, Amanda Richardson, Victoria Stephens, Margaret Collins, Christine Reynolds
+   - Male: William Bradford, Robert Morrison, James Sullivan, Christopher Mitchell, Michael Campbell, David Richardson, Daniel Foster, Matthew Harrison, Andrew Coleman, Thomas Patterson
+
+   REAL ESTATE:
+   - Female: Jennifer Stevens, Michelle Roberts, Rebecca Anderson, Lisa Martinez, Amanda Wilson, Sarah Thompson, Nicole Johnson, Jessica Davis, Ashley Miller, Stephanie Garcia
+   - Male: Michael Roberts, David Anderson, Christopher Wilson, Brian Thompson, Matthew Johnson, James Davis, Robert Miller, Daniel Garcia, Kevin Rodriguez, Ryan Martinez
 
 2. **REALISTIC FULL NAMES**: Use professional-sounding combinations
-   - Good: "Julie Rutgers", "Jennifer Martinez", "David Patterson", "Aisha Williams"
-   - Bad: "Sarah Johnson", "Mike Chen", "John Smith" (too generic)
+   - Good: "Julie Rutgers", "Jennifer Martinez", "David Patterson", "Aisha Williams", "Wei Chen", "Priya Patel"
+   - Bad: "Sarah Johnson", "Mike Smith", "John Doe", "Jane Williams", "Bob Miller", "Lisa Brown" (too generic)
    - Include realistic surnames that match first name demographics
 
-3. **COMPANY-SPECIFIC RESEARCH**:
+3. **AVOID THESE OVERUSED FAKE NAMES** (NEVER USE):
+   - Sarah Johnson, John Smith, Mike Chen, Jane Doe, Bob Miller, Lisa Brown, Tom Davis, Mary Wilson, Steve Taylor, Emily White
+   - Jessica Smith, Michael Jones, Jennifer Davis, David Johnson, Amanda Miller, Chris Anderson, Rachel Williams, Matt Brown, Sarah Miller, John Davis
+   - Generic patterns: [Common first name] + [Top 10 surname]
+
+4. **COMPANY-SPECIFIC RESEARCH**:
 ${companyName.toLowerCase().includes('gpac') ? '   - Gpac is a RECRUITING FIRM - they have many recruiters with names like Julie, Jennifer, Rachel\n   - Focus on: "Senior Recruiter", "Talent Acquisition Specialist", "Recruiting Manager"' :
 companyName.toLowerCase().includes('hantz') ? '   - Hantz Group is FINANCIAL SERVICES - professional names, focus on advisors and managers' :
 companyName.toLowerCase().includes('tech') || companyName.toLowerCase().includes('software') ? '   - Tech company - diverse international names, engineering managers' :

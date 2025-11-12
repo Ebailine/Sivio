@@ -16,6 +16,9 @@ interface Contact {
   relevance_score: number
   is_key_decision_maker: boolean
   department: string | null
+  confidence_score?: number // 0-100
+  confidence_level?: 'high' | 'medium' | 'low' // User-friendly label
+  verification_status?: 'verified' | 'inferred' | 'generated' // How we found them
   metadata?: {
     aiReasoning?: string
     keyStrengths?: string[]
@@ -46,6 +49,37 @@ export default function ContactCard({ contact, onSelect, onGenerateEmail, isSele
     }
   }
 
+  const getConfidenceInfo = (level?: 'high' | 'medium' | 'low', score?: number) => {
+    if (!level) return null
+
+    switch (level) {
+      case 'high':
+        return {
+          icon: CheckCircle2,
+          color: 'text-green-700',
+          bg: 'bg-green-100',
+          label: 'HIGH Confidence',
+          tooltip: `${score || 85}% confident this person exists and their email is correct`
+        }
+      case 'medium':
+        return {
+          icon: AlertCircle,
+          color: 'text-yellow-700',
+          bg: 'bg-yellow-100',
+          label: 'MEDIUM Confidence',
+          tooltip: `${score || 65}% confident - email pattern found but not fully verified`
+        }
+      case 'low':
+        return {
+          icon: AlertCircle,
+          color: 'text-orange-700',
+          bg: 'bg-orange-100',
+          label: 'LOW Confidence',
+          tooltip: `${score || 35}% confident - AI-generated name, not verified yet`
+        }
+    }
+  }
+
   const getRelevanceColor = (score: number) => {
     if (score >= 85) return 'text-green-600 bg-green-50'
     if (score >= 70) return 'text-blue-600 bg-blue-50'
@@ -55,6 +89,9 @@ export default function ContactCard({ contact, onSelect, onGenerateEmail, isSele
 
   const emailStatus = getEmailStatusInfo(contact.email_status)
   const StatusIcon = emailStatus.icon
+
+  const confidenceInfo = getConfidenceInfo(contact.confidence_level, contact.confidence_score)
+  const ConfidenceIcon = confidenceInfo?.icon
 
   return (
     <div
@@ -73,11 +110,24 @@ export default function ContactCard({ contact, onSelect, onGenerateEmail, isSele
             <p className="text-sm text-gray-600 mt-0.5">{contact.position}</p>
           )}
         </div>
-        {contact.is_key_decision_maker && (
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-            Key Decision Maker
-          </span>
-        )}
+        <div className="flex flex-col gap-1.5 items-end">
+          {contact.is_key_decision_maker && (
+            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+              Key Decision Maker
+            </span>
+          )}
+          {confidenceInfo && ConfidenceIcon && (
+            <div
+              className={`flex items-center gap-1 px-2 py-1 rounded-full cursor-help ${confidenceInfo.bg}`}
+              title={confidenceInfo.tooltip}
+            >
+              <ConfidenceIcon size={12} className={confidenceInfo.color} />
+              <span className={`text-xs font-bold ${confidenceInfo.color}`}>
+                {confidenceInfo.label}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Email */}
