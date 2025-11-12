@@ -243,6 +243,10 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
           jobId={job.id}
           companyName={job.company}
           companyDomain={getCompanyDomain(job.url, job.company)}
+          jobTitle={job.title}
+          jobDescription={job.description || undefined}
+          jobType={job.job_type || undefined}
+          location={job.location || undefined}
           userCredits={userCredits}
           onCreditsUpdate={setUserCredits}
         />
