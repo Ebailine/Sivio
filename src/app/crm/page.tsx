@@ -7,8 +7,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { UserButton } from '@clerk/nextjs'
+import NavBar from '@/components/NavBar'
 import {
   Briefcase,
   Users,
@@ -147,38 +146,7 @@ export default function CRMPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-8 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Sivio
-            </div>
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/dashboard"
-                className="font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/jobs"
-                className="font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Browse Jobs
-              </Link>
-              <Link
-                href="/crm"
-                className="font-semibold text-blue-600 border-b-2 border-blue-600 pb-1"
-              >
-                CRM
-              </Link>
-            </nav>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </div>
-      </header>
+      <NavBar activePage="crm" />
 
       {/* CRM Header */}
       <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
