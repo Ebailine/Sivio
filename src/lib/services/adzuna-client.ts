@@ -1,9 +1,13 @@
 /**
  * Adzuna API Client
+ * DEPRECATED - Migrating to Apify for job data
+ * This file is commented out and kept for reference only
+ *
  * Integration with Adzuna job search API for real job listings
  * Free tier: 5000 API calls/month
  */
 
+/*
 const ADZUNA_BASE_URL = 'https://api.adzuna.com/v1/api'
 const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID?.trim()!
 const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY?.trim()!
@@ -45,9 +49,6 @@ interface AdzunaSearchParams {
 export class AdzunaClient {
   private country = 'us' // United States
 
-  /**
-   * Search for jobs with filters
-   */
   async searchJobs(params: AdzunaSearchParams = {}): Promise<{
     jobs: AdzunaJob[]
     count: number
@@ -67,14 +68,12 @@ export class AdzunaClient {
       category,
     } = params
 
-    // Build query string manually to avoid URLSearchParams encoding issues
     const queryParams: string[] = [
       `app_id=${ADZUNA_APP_ID}`,
       `app_key=${ADZUNA_API_KEY}`,
       `results_per_page=${results_per_page}`,
     ]
 
-    // Add optional parameters
     if (what) queryParams.push(`what=${encodeURIComponent(what)}`)
     if (where) queryParams.push(`where=${encodeURIComponent(where)}`)
     if (salary_min) queryParams.push(`salary_min=${salary_min}`)
@@ -102,11 +101,7 @@ export class AdzunaClient {
     }
   }
 
-  /**
-   * Get job categories for business roles
-   */
   getBusinessCategories(): string[] {
-    // Only use categories that work with US Adzuna API
     return [
       'accounting-finance-jobs',
       'sales-jobs',
@@ -115,9 +110,6 @@ export class AdzunaClient {
     ]
   }
 
-  /**
-   * Get entry-level keywords for filtering
-   */
   getEntryLevelKeywords(): string[] {
     return [
       'entry level',
@@ -133,6 +125,22 @@ export class AdzunaClient {
       '0-2 years',
       'early career',
     ]
+  }
+}
+
+export const adzunaClient = new AdzunaClient()
+*/
+
+// Stub export to prevent build errors
+export class AdzunaClient {
+  async searchJobs(): Promise<{ jobs: any[]; count: number }> {
+    throw new Error('Adzuna client deprecated - migrating to Apify')
+  }
+  getBusinessCategories(): string[] {
+    return []
+  }
+  getEntryLevelKeywords(): string[] {
+    return []
   }
 }
 

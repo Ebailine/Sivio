@@ -1,19 +1,26 @@
+/**
+ * JobCard Component - Apify/LinkedIn Schema
+ * Displays job information in a card format for browse/search results
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays } from 'lucide-react'
+import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink } from 'lucide-react'
+import type { JobCardData } from '@/types/job'
 
 interface JobCardProps {
-  job: {
-    id: string
-    title: string
-    company: string
-    location: string | null
-    salary_min: number | null
-    salary_max: number | null
-    job_type: string | null
-    remote: boolean
-    posted_date: string | null
+  job: JobCardData | {
+    job_id: string
+    job_title: string
+    company_name: string
+    company_logo_url?: string | null
+    location: string
+    employment_type?: string | null
+    seniority_level?: string | null
+    salary_range?: string | null
+    time_posted: string
+    easy_apply?: boolean
   }
   isSaved?: boolean
   onSave?: (jobId: string) => Promise<void>
@@ -35,95 +42,116 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
 
     setSaving(true)
     try {
-      await onSave(job.id)
+      await onSave(job.job_id)
       setSaved(!saved)
     } finally {
       setSaving(false)
     }
   }
 
-  const formatSalary = () => {
-    if (!job.salary_min && !job.salary_max) return null
-    if (job.salary_min && job.salary_max) {
-      return `$${(job.salary_min / 1000).toFixed(0)}k - $${(job.salary_max / 1000).toFixed(0)}k`
-    }
-    if (job.salary_min) return `$${(job.salary_min / 1000).toFixed(0)}k+`
-    return `Up to $${(job.salary_max! / 1000).toFixed(0)}k`
-  }
-
-  const formatDate = (date: string | null) => {
-    if (!date) return null
-    const now = new Date()
-    const posted = new Date(date)
-    const diffDays = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-    return `${Math.floor(diffDays / 30)} months ago`
-  }
+  // time_posted is already human-readable from LinkedIn (e.g., "2 days ago")
+  // No need to format, just display as-is
 
   return (
     <div
       onClick={onClick}
       className="bg-white rounded-lg shadow hover:shadow-lg transition-all p-6 cursor-pointer border border-gray-100 hover:border-blue-300"
     >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-900 mb-1">{job.title}</h3>
-          <p className="text-lg text-blue-600 font-medium">{job.company}</p>
+      {/* Header with company logo, title, and bookmark */}
+      <div className="flex gap-4 mb-3">
+        {/* Company Logo */}
+        {job.company_logo_url && (
+          <div className="flex-shrink-0">
+            <img
+              src={job.company_logo_url}
+              alt={job.company_name}
+              className="w-12 h-12 rounded object-contain bg-gray-50"
+              onError={(e) => {
+                // Hide image if it fails to load
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          </div>
+        )}
+
+        {/* Title and Company */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-semibold text-gray-900 mb-1 truncate">
+            {job.job_title}
+          </h3>
+          <p className="text-lg text-blue-600 font-medium truncate">
+            {job.company_name}
+          </p>
         </div>
+
+        {/* Bookmark Button */}
         {onSave && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`p-2 rounded-full transition-colors ${
-              saved
-                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-            }`}
-          >
-            {saved ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
-          </button>
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`p-2 rounded-full transition-colors ${
+                saved
+                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                  : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+              }`}
+              aria-label={saved ? 'Remove bookmark' : 'Bookmark job'}
+            >
+              {saved ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
+            </button>
+          </div>
         )}
       </div>
 
+      {/* Job Details */}
       <div className="space-y-2 text-sm text-gray-600">
-        {job.location && (
+        {/* Location & Easy Apply */}
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <MapPin size={16} className="text-gray-400" />
-            <span>{job.location}</span>
-            {job.remote && (
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                Remote
-              </span>
-            )}
+            <MapPin size={16} className="text-gray-400 flex-shrink-0" />
+            <span className="truncate">{job.location}</span>
           </div>
-        )}
+          {job.easy_apply && (
+            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
+              <ExternalLink size={12} />
+              Easy Apply
+            </span>
+          )}
+        </div>
 
-        {formatSalary() && (
+        {/* Salary */}
+        {job.salary_range && (
           <div className="flex items-center gap-2">
             <DollarSign size={16} className="text-gray-400" />
-            <span>{formatSalary()}</span>
+            <span>{job.salary_range}</span>
           </div>
         )}
 
-        <div className="flex items-center gap-4">
-          {job.job_type && (
+        {/* Employment Type & Seniority */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {job.employment_type && (
             <div className="flex items-center gap-2">
               <Briefcase size={16} className="text-gray-400" />
-              <span className="capitalize">{job.job_type.replace('-', ' ')}</span>
+              <span>{job.employment_type}</span>
             </div>
           )}
 
-          {job.posted_date && (
+          {job.seniority_level && (
             <div className="flex items-center gap-2">
-              <CalendarDays size={16} className="text-gray-400" />
-              <span>{formatDate(job.posted_date)}</span>
+              <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                {job.seniority_level}
+              </span>
             </div>
           )}
         </div>
+
+        {/* Posted Date */}
+        {job.time_posted && (
+          <div className="flex items-center gap-2 text-gray-500">
+            <CalendarDays size={16} className="text-gray-400" />
+            <span>{job.time_posted}</span>
+          </div>
+        )}
       </div>
     </div>
   )

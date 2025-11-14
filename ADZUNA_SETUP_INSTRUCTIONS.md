@@ -1,5 +1,13 @@
 # Adzuna Job Board Integration - Setup Instructions
 
+# ⚠️ DEPRECATED - MIGRATING TO APIFY
+
+**This integration has been disabled and is being replaced with Apify.**
+
+All Adzuna-related code has been commented out and API keys have been removed from environment variables. This document is kept for reference only.
+
+---
+
 ## ✅ WHAT WAS IMPLEMENTED
 
 Your Sivio platform now has a complete real job board powered by Adzuna API with:

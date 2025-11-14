@@ -1,24 +1,15 @@
+/**
+ * JobDetailModal Component - Apify/LinkedIn Schema
+ * Full job details modal with contact finder integration
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users } from 'lucide-react'
+import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users, Building2 } from 'lucide-react'
 import ContactFinderModal from './ContactFinderModal'
 import { getCompanyDomain } from '@/lib/utils/domain-guesser'
-
-interface Job {
-  id: string
-  title: string
-  company: string
-  location: string | null
-  description: string | null
-  url: string | null
-  salary_min: number | null
-  salary_max: number | null
-  job_type: string | null
-  remote: boolean
-  posted_date: string | null
-  source: string | null
-}
+import type { Job } from '@/types/job'
 
 interface JobDetailModalProps {
   jobId: string | null
@@ -86,6 +77,9 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
     }
   }
 
+  // time_posted is already formatted from LinkedIn (e.g., "2 days ago")
+  // No need to parse/format, display as-is
+
   if (!isOpen) return null
 
   return (
@@ -98,7 +92,7 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
         />
 
         {/* Modal */}
-        <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -107,124 +101,189 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
           ) : job ? (
             <>
               {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-start">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h2>
-                  <p className="text-xl text-blue-600 font-medium">{job.company}</p>
-                </div>
-                <div className="flex gap-2">
-                  {onSave && (
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className={`p-2 rounded-full transition-colors ${
-                        saved
-                          ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-                      }`}
-                    >
-                      {saved ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
-                    </button>
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
+                <div className="flex gap-4 items-start">
+                  {/* Company Logo */}
+                  {job.company_logo_url && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={job.company_logo_url}
+                        alt={job.company_name}
+                        className="w-16 h-16 rounded object-contain bg-gray-50"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    </div>
                   )}
-                  <button
-                    onClick={onClose}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <X size={24} />
-                  </button>
+
+                  {/* Title & Company */}
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      {job.job_title}
+                    </h2>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Building2 size={18} className="text-blue-600" />
+                      <p className="text-xl text-blue-600 font-medium">
+                        {job.company_name}
+                      </p>
+                    </div>
+                    {job.company_url && (
+                      <a
+                        href={job.company_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-gray-600 hover:text-blue-600 flex items-center gap-1"
+                      >
+                        Company Page <ExternalLink size={14} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 flex-shrink-0">
+                    {onSave && (
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className={`p-2 rounded-full transition-colors ${
+                          saved
+                            ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                            : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        aria-label={saved ? 'Remove bookmark' : 'Bookmark job'}
+                      >
+                        {saved ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
+                      </button>
+                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Close modal"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Content */}
               <div className="p-6">
-                {/* Job Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  {job.location && (
+                {/* Job Metadata */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
+                  {/* Location */}
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <MapPin size={18} className="text-gray-400 flex-shrink-0" />
+                    <span>{job.location}</span>
+                  </div>
+
+                  {/* Employment Type */}
+                  {job.employment_type && (
                     <div className="flex items-center gap-2 text-gray-700">
-                      <MapPin size={18} className="text-gray-400" />
-                      <span>{job.location}</span>
-                      {job.remote && (
-                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                          Remote
-                        </span>
-                      )}
+                      <Briefcase size={18} className="text-gray-400" />
+                      <span>{job.employment_type}</span>
                     </div>
                   )}
 
-                  {(job.salary_min || job.salary_max) && (
+                  {/* Salary Range */}
+                  {job.salary_range && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <DollarSign size={18} className="text-gray-400" />
-                      <span>
-                        {job.salary_min && job.salary_max
-                          ? `$${(job.salary_min / 1000).toFixed(0)}k - $${(job.salary_max / 1000).toFixed(0)}k`
-                          : job.salary_min
-                          ? `$${(job.salary_min / 1000).toFixed(0)}k+`
-                          : `Up to $${(job.salary_max! / 1000).toFixed(0)}k`}
+                      <span>{job.salary_range}</span>
+                    </div>
+                  )}
+
+                  {/* Seniority Level */}
+                  {job.seniority_level && (
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                        {job.seniority_level}
                       </span>
                     </div>
                   )}
 
-                  {job.job_type && (
+                  {/* Posted Date */}
+                  {job.time_posted && (
                     <div className="flex items-center gap-2 text-gray-700">
-                      <Briefcase size={18} className="text-gray-400" />
-                      <span className="capitalize">{job.job_type.replace('-', ' ')}</span>
+                      <CalendarDays size={16} className="text-gray-400" />
+                      <span>{job.time_posted}</span>
                     </div>
                   )}
 
-                  {job.posted_date && (
+                  {/* Easy Apply Badge */}
+                  {job.easy_apply && (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium flex items-center gap-1">
+                        <ExternalLink size={14} />
+                        Easy Apply
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Number of Applicants */}
+                  {job.num_applicants && (
                     <div className="flex items-center gap-2 text-gray-700">
-                      <CalendarDays size={18} className="text-gray-400" />
-                      <span>
-                        Posted{' '}
-                        {(() => {
-                          const now = new Date()
-                          const posted = new Date(job.posted_date)
-                          const diffDays = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24))
-                          if (diffDays === 0) return 'today'
-                          if (diffDays === 1) return 'yesterday'
-                          if (diffDays < 7) return `${diffDays} days ago`
-                          if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-                          return `${Math.floor(diffDays / 30)} months ago`
-                        })()}
+                      <Users size={18} className="text-gray-400" />
+                      <span>{job.num_applicants}</span>
+                    </div>
+                  )}
+
+                  {/* Job Function */}
+                  {job.job_function && (
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <span className="text-sm text-gray-600">
+                        Function: <span className="font-medium">{job.job_function}</span>
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Description */}
-                {job.description && (
+                {/* Industries */}
+                {job.industries && job.industries.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Job Description</h3>
-                    <p className="text-gray-700 whitespace-pre-wrap">{job.description}</p>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Industries</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {job.industries.map((industry, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                        >
+                          {industry}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {/* Apply Button */}
-                {job.url && (
-                  <div className="pt-6 border-t border-gray-200">
-                    <div className="flex flex-wrap gap-3">
-                      <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                      >
-                        Apply on Company Website
-                        <ExternalLink size={18} />
-                      </a>
-                      <button
-                        onClick={() => setShowContactFinder(true)}
-                        className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                      >
-                        <Users size={18} />
-                        Find Contacts
-                      </button>
-                    </div>
-                    {job.source && (
-                      <p className="mt-2 text-sm text-gray-500">Source: {job.source}</p>
-                    )}
+                {/* Job Description */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Job Description</h3>
+                  <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                    {job.job_description}
                   </div>
-                )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href={job.apply_url || job.job_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      Apply on LinkedIn
+                      <ExternalLink size={18} />
+                    </a>
+                    <button
+                      onClick={() => setShowContactFinder(true)}
+                      className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    >
+                      <Users size={18} />
+                      Find Contacts
+                    </button>
+                  </div>
+                </div>
               </div>
             </>
           ) : (
@@ -240,12 +299,12 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
         <ContactFinderModal
           isOpen={showContactFinder}
           onClose={() => setShowContactFinder(false)}
-          jobId={job.id}
-          companyName={job.company}
-          companyDomain={getCompanyDomain(job.url, job.company)}
-          jobTitle={job.title}
-          jobDescription={job.description || undefined}
-          jobType={job.job_type || undefined}
+          jobId={job.job_id}
+          companyName={job.company_name}
+          companyDomain={getCompanyDomain(job.job_url || job.company_url, job.company_name)}
+          jobTitle={job.job_title}
+          jobDescription={job.job_description || undefined}
+          jobType={job.employment_type || undefined}
           location={job.location || undefined}
           userCredits={userCredits}
           onCreditsUpdate={setUserCredits}

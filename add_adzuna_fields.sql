@@ -1,4 +1,7 @@
 -- Migration: Add Adzuna integration fields to jobs table
+-- DEPRECATED - This migration was for Adzuna integration (now migrating to Apify)
+-- DO NOT RUN - Kept for reference only
+-- The fields created here (adzuna_id, contract_type, category, etc.) may still be useful for Apify
 -- Run this in Supabase SQL Editor
 
 -- Add new fields for enhanced job data

@@ -1,3 +1,19 @@
+/**
+ * Test Adzuna API
+ * DEPRECATED - Migrating to Apify for job data
+ * This file is commented out and kept for reference only
+ */
+
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({
+    success: false,
+    error: 'Adzuna integration deprecated - migrating to Apify',
+  }, { status: 410 })
+}
+
+/*
 import { NextResponse } from 'next/server'
 import { adzunaClient } from '@/lib/services/adzuna-client'
 
@@ -24,3 +40,4 @@ export async function GET() {
     })
   }
 }
+*/
