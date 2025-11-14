@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users, Building2, Plus, Zap, Target, CheckCircle2 } from 'lucide-react'
+import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users, Building2, Plus, Zap, Target, CheckCircle2, Calendar } from 'lucide-react'
 import ContactFinderModal from './ContactFinderModal'
 import { getCompanyDomain } from '@/lib/utils/domain-guesser'
 import type { Job } from '@/types/job'
