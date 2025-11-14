@@ -196,16 +196,22 @@ export default function JobsPage() {
               </Link>
               <nav className="hidden md:flex gap-6">
                 <Link
+                  href="/dashboard"
+                  className="text-gray-600 hover:text-gray-900 transition-colors font-semibold"
+                >
+                  Dashboard
+                </Link>
+                <Link
                   href="/jobs"
                   className="text-blue-600 font-semibold border-b-2 border-blue-600 pb-1"
                 >
                   Browse Jobs
                 </Link>
                 <Link
-                  href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                  href="/crm"
+                  className="text-gray-600 hover:text-gray-900 transition-colors font-semibold"
                 >
-                  Dashboard
+                  CRM
                 </Link>
               </nav>
             </div>

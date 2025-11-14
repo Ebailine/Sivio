@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users, Building2 } from 'lucide-react'
+import { X, ExternalLink, MapPin, DollarSign, Briefcase, CalendarDays, Bookmark, BookmarkCheck, Users, Building2, Plus, Zap, Target, CheckCircle2 } from 'lucide-react'
 import ContactFinderModal from './ContactFinderModal'
 import { getCompanyDomain } from '@/lib/utils/domain-guesser'
 import type { Job } from '@/types/job'
@@ -77,6 +77,26 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
     }
   }
 
+  // Action handlers - Templates for webhook integration
+  const handleAddToCRM = async () => {
+    if (!job) return
+    console.log('Add to CRM clicked - webhook placeholder for job:', job.job_id)
+    // TODO: POST to /api/crm/applications with job data
+    alert('Adding to CRM... (Webhook integration coming soon)')
+  }
+
+  const handleAutoApply = async () => {
+    if (!job) return
+    console.log('Auto-apply clicked - webhook placeholder for job:', job.job_id)
+    // TODO: POST to /api/applications/auto-apply with job data
+    alert('Auto-applying... (Webhook integration coming soon)')
+  }
+
+  const handleQuickAction = (action: string) => {
+    console.log(`Quick action: ${action} for job:`, job?.job_id)
+    alert(`${action} action triggered (Webhook integration coming soon)`)
+  }
+
   // time_posted is already formatted from LinkedIn (e.g., "2 days ago")
   // No need to parse/format, display as-is
 
@@ -92,7 +112,7 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
         />
 
         {/* Modal */}
-        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-200/50">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -265,22 +285,65 @@ export default function JobDetailModal({ jobId, isOpen, onClose, isSaved = false
 
                 {/* Action Buttons */}
                 <div className="pt-6 border-t border-gray-200">
-                  <div className="flex flex-wrap gap-3">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Zap size={16} className="text-blue-600" />
+                    Quick Actions
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <button
+                      onClick={handleAddToCRM}
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                    >
+                      <Plus size={20} />
+                      Add to CRM
+                    </button>
+                    <button
+                      onClick={handleAutoApply}
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                    >
+                      <Zap size={20} />
+                      Auto-Apply
+                    </button>
+                    <button
+                      onClick={() => setShowContactFinder(true)}
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                    >
+                      <Target size={20} />
+                      Find Best Contacts
+                    </button>
                     <a
                       href={job.apply_url || job.job_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
                     >
                       Apply on LinkedIn
-                      <ExternalLink size={18} />
+                      <ExternalLink size={20} />
                     </a>
+                  </div>
+
+                  {/* Secondary Actions */}
+                  <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => setShowContactFinder(true)}
-                      className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                      onClick={() => handleQuickAction('Schedule Interview')}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm flex items-center gap-2"
                     >
-                      <Users size={18} />
-                      Find Contacts
+                      <Calendar size={16} />
+                      Schedule Interview
+                    </button>
+                    <button
+                      onClick={() => handleQuickAction('Set Reminder')}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm flex items-center gap-2"
+                    >
+                      <CheckCircle2 size={16} />
+                      Set Reminder
+                    </button>
+                    <button
+                      onClick={() => handleQuickAction('Share')}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm flex items-center gap-2"
+                    >
+                      <ExternalLink size={16} />
+                      Share
                     </button>
                   </div>
                 </div>

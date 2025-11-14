@@ -1,8 +1,30 @@
+/**
+ * Dashboard - Your Internship Command Center
+ * Professional dashboard matching the new Sivio design system
+ */
+
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  Briefcase,
+  Users,
+  Mail,
+  TrendingUp,
+  Target,
+  Zap,
+  Award,
+  Calendar,
+  DollarSign,
+  Star,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+} from 'lucide-react'
 
 export default async function DashboardPage() {
   const user = await currentUser()
@@ -36,53 +58,227 @@ export default async function DashboardPage() {
     savedJobsCount = count || 0
   }
 
+  // Mock data for additional stats (will be real once we build full features)
+  const stats = {
+    applicationsSubmitted: 0,
+    interviewsScheduled: 0,
+    contactsFound: 0,
+    responseRate: 0,
+    averageResponseTime: 0,
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-blue-600">Sivio</h2>
-          <UserButton afterSignOutUrl="/" />
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-8 py-4 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Sivio
+            </div>
+          </Link>
+          <div className="flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-6">
+              <Link
+                href="/dashboard"
+                className="font-semibold text-blue-600 border-b-2 border-blue-600 pb-1"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/jobs"
+                className="font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Browse Jobs
+              </Link>
+              <Link
+                href="/crm"
+                className="font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                CRM
+              </Link>
+            </nav>
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-4">
-          Welcome, {user.firstName || 'there'}! 👋
-        </h1>
-        <p className="text-gray-600 mb-8">
-          You're signed in as {user.emailAddresses[0].emailAddress}
-        </p>
+      <div className="max-w-[1600px] mx-auto px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 mb-3">
+            Welcome back, {user.firstName || 'there'}! 👋
+          </h1>
+          <p className="text-xl text-gray-600">
+            Your internship search command center. Let's land that dream role!
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-2">Credits</h3>
-            <p className="text-3xl font-bold text-blue-600">{credits}</p>
-            <p className="text-sm text-gray-500 mt-2">Available for contact searches</p>
+        {/* Primary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <Briefcase size={28} />
+              </div>
+              <TrendingUp size={24} className="opacity-60" />
+            </div>
+            <div className="text-4xl font-black mb-2">{savedJobsCount}</div>
+            <div className="text-blue-100 font-medium">Saved Jobs</div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-2">Saved Jobs</h3>
-            <p className="text-3xl font-bold text-green-600">{savedJobsCount}</p>
-            <p className="text-sm text-gray-500 mt-2">Jobs you're tracking</p>
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <Users size={28} />
+              </div>
+              <Star size={24} className="opacity-60" />
+            </div>
+            <div className="text-4xl font-black mb-2">{stats.contactsFound}</div>
+            <div className="text-green-100 font-medium">Contacts Found</div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-2">Outreach Sent</h3>
-            <p className="text-3xl font-bold text-purple-600">0</p>
-            <p className="text-sm text-gray-500 mt-2">Emails to contacts</p>
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <Zap size={28} />
+              </div>
+              <CheckCircle2 size={24} className="opacity-60" />
+            </div>
+            <div className="text-4xl font-black mb-2">{credits}</div>
+            <div className="text-purple-100 font-medium">Credits Available</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <Calendar size={28} />
+              </div>
+              <Award size={24} className="opacity-60" />
+            </div>
+            <div className="text-4xl font-black mb-2">{stats.interviewsScheduled}</div>
+            <div className="text-orange-100 font-medium">Interviews Lined Up</div>
           </div>
         </div>
 
-        <div className="mt-8 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/jobs" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-center">
-              Browse Jobs
+        {/* Quick Actions */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Sparkles size={24} className="text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Quick Actions</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link
+              href="/jobs"
+              className="group flex items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+            >
+              <Target size={24} />
+              <div className="flex-1">
+                <div className="font-bold text-lg">Find Jobs</div>
+                <div className="text-blue-100 text-sm">Browse 50,000+ listings</div>
+              </div>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
-              Find Contacts
+
+            <Link
+              href="/crm"
+              className="group flex items-center gap-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+            >
+              <BarChart3 size={24} />
+              <div className="flex-1">
+                <div className="font-bold text-lg">Open CRM</div>
+                <div className="text-purple-100 text-sm">Track applications</div>
+              </div>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+
+            <button className="group flex items-center gap-3 bg-gradient-to-r from-green-600 to-green-700 text-white p-5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200">
+              <Users size={24} />
+              <div className="flex-1">
+                <div className="font-bold text-lg">Find Contacts</div>
+                <div className="text-green-100 text-sm">Connect with recruiters</div>
+              </div>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button className="group flex items-center gap-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white p-5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200">
+              <Mail size={24} />
+              <div className="flex-1">
+                <div className="font-bold text-lg">Start Outreach</div>
+                <div className="text-orange-100 text-sm">Automated emails</div>
+              </div>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Clock size={20} className="text-blue-600" />
+              Recent Activity
+            </h3>
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📊</div>
+              <p className="text-gray-600 mb-4">No recent activity yet</p>
+              <p className="text-sm text-gray-500">
+                Start applying to jobs and tracking applications to see your activity here
+              </p>
+            </div>
+          </div>
+
+          {/* Performance Insights */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <TrendingUp size={20} className="text-green-600" />
+              Performance Insights
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Response Rate</span>
+                  <span className="text-2xl font-black text-blue-600">{stats.responseRate}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${stats.responseRate}%` }}></div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Avg Response Time</span>
+                  <span className="text-2xl font-black text-green-600">{stats.averageResponseTime || '-'}</span>
+                </div>
+                <p className="text-xs text-gray-600">Days to hear back from companies</p>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Interview Rate</span>
+                  <span className="text-2xl font-black text-purple-600">0%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-purple-600 h-2 rounded-full" style={{ width: '0%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Upgrade CTA */}
+        <div className="mt-8 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-xl">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">🚀 Supercharge Your Job Search</h3>
+              <p className="text-blue-100 text-lg">
+                Upgrade to Pro for unlimited auto-apply, priority contact finding, and AI interview prep
+              </p>
+            </div>
+            <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 whitespace-nowrap">
+              Upgrade to Pro →
             </button>
           </div>
         </div>
