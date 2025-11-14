@@ -8,6 +8,9 @@
 
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
+
+// Force dynamic rendering to avoid SSR issues with Clerk
+export const dynamic = 'force-dynamic'
 import {
   Briefcase,
   Users,
