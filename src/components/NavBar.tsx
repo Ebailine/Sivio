@@ -1,13 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { UserButton } from '@clerk/nextjs'
+import { UserButton, useUser } from '@clerk/nextjs'
+import { useEffect, useState } from 'react'
 
 interface NavBarProps {
   activePage: 'dashboard' | 'jobs' | 'crm'
+  showUserButton?: boolean
 }
 
-export default function NavBar({ activePage }: NavBarProps) {
+export default function NavBar({ activePage, showUserButton = true }: NavBarProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
       <div className="max-w-[1600px] mx-auto px-8 py-4 flex justify-between items-center">
@@ -49,7 +57,7 @@ export default function NavBar({ activePage }: NavBarProps) {
               CRM
             </Link>
           </nav>
-          <UserButton afterSignOutUrl="/" />
+          {mounted && showUserButton && <UserButton afterSignOutUrl="/" />}
         </div>
       </div>
     </header>
