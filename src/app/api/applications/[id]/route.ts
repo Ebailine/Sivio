@@ -11,7 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // PATCH /api/applications/[id] - Update application
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -23,7 +23,7 @@ export async function PATCH(
       )
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const supabase = createAdminClient()
@@ -131,7 +131,7 @@ export async function PATCH(
 // DELETE /api/applications/[id] - Delete application
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -143,7 +143,7 @@ export async function DELETE(
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     const supabase = createAdminClient()
 
@@ -191,7 +191,7 @@ export async function DELETE(
 // GET /api/applications/[id] - Get single application
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -203,7 +203,7 @@ export async function GET(
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     const supabase = createAdminClient()
 
