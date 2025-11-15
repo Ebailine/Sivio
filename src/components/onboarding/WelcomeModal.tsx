@@ -7,14 +7,14 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ReactElement } from 'react'
 import { X, Sparkles, Target, Brain, Rocket, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { GradientText } from '@/components/ui/GradientText'
 
 interface UserGoal {
   id: string
-  icon: JSX.Element
+  icon: ReactElement
   title: string
   description: string
   color: string
