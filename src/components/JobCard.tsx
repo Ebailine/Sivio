@@ -1,16 +1,17 @@
 /**
- * JobCard Component - Apify/LinkedIn Schema
- * Displays job information in a card format for browse/search results
+ * JobCard Component - Enhanced with new UI components
+ * Displays job information in a card format
  */
 
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink } from 'lucide-react'
-import type { JobCardData } from '@/types/job'
+import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink, Building2 } from 'lucide-react'
+import { TiltCard } from './ui/TiltCard'
+import { Button } from './ui/Button'
 
 interface JobCardProps {
-  job: JobCardData | {
+  job: {
     job_id: string
     job_title: string
     company_name: string
@@ -31,7 +32,6 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(isSaved)
 
-  // Sync internal state with prop when it changes
   useEffect(() => {
     setSaved(isSaved)
   }, [isSaved])
@@ -49,25 +49,21 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
     }
   }
 
-  // time_posted is already human-readable from LinkedIn (e.g., "2 days ago")
-  // No need to format, just display as-is
-
   return (
-    <div
+    <TiltCard
       onClick={onClick}
-      className="bg-white rounded-lg shadow hover:shadow-lg transition-all p-6 cursor-pointer border border-gray-100 hover:border-blue-300"
+      className="cursor-pointer group hover:border-blue-500 transition-colors h-full"
     >
-      {/* Header with company logo, title, and bookmark */}
-      <div className="flex gap-4 mb-3">
+      {/* Header with company logo and bookmark */}
+      <div className="flex gap-4 mb-4">
         {/* Company Logo */}
         {job.company_logo_url && (
           <div className="flex-shrink-0">
             <img
               src={job.company_logo_url}
               alt={job.company_name}
-              className="w-12 h-12 rounded object-contain bg-gray-50"
+              className="w-14 h-14 rounded-lg object-contain bg-gray-50 p-2"
               onError={(e) => {
-                // Hide image if it fails to load
                 e.currentTarget.style.display = 'none'
               }}
             />
@@ -76,12 +72,13 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
 
         {/* Title and Company */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-semibold text-gray-900 mb-1 truncate">
+          <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
             {job.job_title}
           </h3>
-          <p className="text-lg text-blue-600 font-medium truncate">
-            {job.company_name}
-          </p>
+          <div className="flex items-center gap-2 text-gray-600">
+            <Building2 className="w-4 h-4 flex-shrink-0" />
+            <span className="font-semibold truncate">{job.company_name}</span>
+          </div>
         </div>
 
         {/* Bookmark Button */}
@@ -90,29 +87,29 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
             <button
               onClick={handleSave}
               disabled={saving}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2 rounded-full transition-all ${
                 saved
-                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                  : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:scale-110'
+                  : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50 hover:scale-110'
               }`}
               aria-label={saved ? 'Remove bookmark' : 'Bookmark job'}
             >
-              {saved ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
+              {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
             </button>
           </div>
         )}
       </div>
 
       {/* Job Details */}
-      <div className="space-y-2 text-sm text-gray-600">
+      <div className="space-y-3 mb-4">
         {/* Location & Easy Apply */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <MapPin size={16} className="text-gray-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+            <MapPin className="w-4 h-4 text-gray-400" />
             <span className="truncate">{job.location}</span>
           </div>
           {job.easy_apply && (
-            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
+            <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1">
               <ExternalLink size={12} />
               Easy Apply
             </span>
@@ -121,38 +118,51 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
 
         {/* Salary */}
         {job.salary_range && (
-          <div className="flex items-center gap-2">
-            <DollarSign size={16} className="text-gray-400" />
+          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+            <DollarSign className="w-4 h-4 text-gray-400" />
             <span>{job.salary_range}</span>
           </div>
         )}
 
         {/* Employment Type & Seniority */}
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {job.employment_type && (
-            <div className="flex items-center gap-2">
-              <Briefcase size={16} className="text-gray-400" />
+            <div className="flex items-center gap-1.5 text-sm text-gray-600">
+              <Briefcase className="w-4 h-4 text-gray-400" />
               <span>{job.employment_type}</span>
             </div>
           )}
 
           {job.seniority_level && (
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                {job.seniority_level}
-              </span>
-            </div>
+            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+              {job.seniority_level}
+            </span>
           )}
         </div>
 
         {/* Posted Date */}
         {job.time_posted && (
-          <div className="flex items-center gap-2 text-gray-500">
-            <CalendarDays size={16} className="text-gray-400" />
+          <div className="flex items-center gap-1.5 text-sm text-gray-500">
+            <CalendarDays className="w-4 h-4 text-gray-400" />
             <span>{job.time_posted}</span>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Action Button */}
+      <div className="pt-4 border-t border-gray-100">
+        <Button
+          variant="gradient"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onClick?.()
+          }}
+          className="w-full"
+        >
+          View Details
+        </Button>
+      </div>
+    </TiltCard>
   )
 }

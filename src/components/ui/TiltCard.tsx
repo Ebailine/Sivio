@@ -6,9 +6,10 @@ interface TiltCardProps {
   children: ReactNode
   className?: string
   intensity?: number
+  onClick?: () => void
 }
 
-export function TiltCard({ children, className = '', intensity = 15 }: TiltCardProps) {
+export function TiltCard({ children, className = '', intensity = 15, onClick }: TiltCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -38,6 +39,7 @@ export function TiltCard({ children, className = '', intensity = 15 }: TiltCardP
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onClick={onClick}
       className={`
         relative
         bg-white rounded-2xl p-8
