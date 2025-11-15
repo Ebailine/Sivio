@@ -8,10 +8,12 @@
 import { useUser } from '@clerk/nextjs'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { FloatingCard } from '@/components/ui/FloatingCard'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { CountUpNumber } from '@/components/ui/CountUpNumber'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
+import { MouseGradient } from '@/components/ui/MouseGradient'
+import { GradientText } from '@/components/ui/GradientText'
 import {
   Sparkles,
   Zap,
@@ -112,6 +114,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white">
+        <MouseGradient className="opacity-40" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
 
         <div className="relative max-w-7xl mx-auto px-6 py-24 sm:py-32">
@@ -126,7 +129,9 @@ export default function Home() {
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
               Land Your Dream Internship
               <br />
-              <span className="text-gradient-animate">10x Faster</span>
+              <GradientText colors={['#FBBF24', '#F59E0B', '#EC4899']} className="text-5xl sm:text-7xl">
+                10x Faster
+              </GradientText>
             </h1>
 
             <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -203,7 +208,7 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-black text-gray-900 mb-6">
-                Your Complete Internship <span className="text-blue-600">Command Center</span>
+                Your Complete Internship <GradientText colors={['#2563EB', '#7C3AED', '#DB2777']}>Command Center</GradientText>
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Everything you need to land internships at top companies
@@ -214,7 +219,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <ScrollReveal key={feature.title} delay={index * 100}>
-                <TiltCard className="glow-on-hover h-full">
+                <FloatingCard className="bg-white rounded-2xl border-2 border-gray-100 p-8 h-full shadow-sm hover:shadow-xl transition-shadow">
                   <div className="mb-4">{feature.icon}</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                   <p className="text-gray-600 mb-4">{feature.description}</p>
@@ -222,7 +227,7 @@ export default function Home() {
                     <CheckCircle2 className="w-4 h-4" />
                     {feature.benefit}
                   </div>
-                </TiltCard>
+                </FloatingCard>
               </ScrollReveal>
             ))}
           </div>
@@ -235,7 +240,7 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-black text-gray-900 mb-6">
-                How It <span className="text-gradient-animate">Works</span>
+                How It <GradientText>Works</GradientText>
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Get from zero to offer in 4 simple steps

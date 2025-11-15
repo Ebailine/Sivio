@@ -1,14 +1,14 @@
 /**
  * About Page - World-Class UI
  * Compelling founder story, mission, values, and team
- * Enhanced with TiltCard, ScrollReveal, Button, and animations
+ * Enhanced with Card, ScrollReveal, Button, and animations
  */
 
 'use client'
 
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -197,7 +197,7 @@ export default function AboutPage() {
           </ScrollReveal>
 
           <ScrollReveal delay={100}>
-            <TiltCard className="bg-white rounded-3xl p-12">
+            <Card className="bg-white rounded-3xl p-12">
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 mb-6 text-lg leading-relaxed">
                   <strong className="text-gray-900">Sivio was born from a simple frustration:</strong> the job search process is fundamentally broken.
@@ -215,7 +215,7 @@ export default function AboutPage() {
                   That question became Sivio. By combining <strong>automation, AI, and strategic outreach</strong>, we give every student—regardless of their network—the tools to compete and win in today's competitive job market.
                 </p>
               </div>
-            </TiltCard>
+            </Card>
           </ScrollReveal>
         </div>
       </section>
@@ -232,7 +232,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-8">
             {values.map((value, index) => (
               <ScrollReveal key={index} delay={index * 100}>
-                <TiltCard className="h-full">
+                <Card className="h-full">
                   <div className="mb-6">
                     {value.icon}
                   </div>
@@ -248,7 +248,7 @@ export default function AboutPage() {
                       <span>{value.impact}</span>
                     </div>
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>
@@ -302,7 +302,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {team.map((member, index) => (
               <ScrollReveal key={index} delay={index * 100}>
-                <TiltCard className="text-center">
+                <Card className="text-center">
                   <div className="text-6xl mb-6">{member.image}</div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     {member.name}
@@ -324,7 +324,7 @@ export default function AboutPage() {
                       <Mail size={20} className="text-gray-600 hover:text-purple-600" />
                     </a>
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>

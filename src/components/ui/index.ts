@@ -30,6 +30,8 @@ export type { BadgeProps } from './Badge'
 export { Button } from './Button'
 export { CountUpNumber } from './CountUpNumber'
 export { TiltCard } from './TiltCard'
+export { Card } from './Card'
+export type { CardProps } from './Card'
 
 // Feedback Components
 export { Modal } from './Modal'
@@ -54,3 +56,9 @@ export type { SkeletonProps } from './Skeleton'
 // Layout Components
 export { ParticlesBackground } from './ParticlesBackground'
 export { ScrollReveal } from './ScrollReveal'
+
+// Advanced Animation Components
+export { MouseGradient } from './MouseGradient'
+export { MagneticButton } from './MagneticButton'
+export { GradientText } from './GradientText'
+export { FloatingCard } from './FloatingCard'

@@ -1,7 +1,7 @@
 /**
  * Help Center Page - World-Class UI
  * Comprehensive support with 20+ help articles organized by category
- * Enhanced with TiltCard, ScrollReveal, Button, and animations
+ * Enhanced with Card, ScrollReveal, Button, and animations
  */
 
 'use client'
@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -276,7 +276,7 @@ export default function HelpPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category, index) => (
               <ScrollReveal key={index} delay={index * 100}>
-                <TiltCard className="h-full hover:shadow-2xl transition-shadow cursor-pointer">
+                <Card className="h-full hover:shadow-2xl transition-shadow cursor-pointer">
                   <div className={`${category.color} w-16 h-16 rounded-2xl flex items-center justify-center mb-4`}>
                     {category.icon}
                   </div>
@@ -289,7 +289,7 @@ export default function HelpPage() {
                   <div className="text-blue-600 font-semibold text-sm">
                     {category.articleCount} articles →
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>
@@ -308,7 +308,7 @@ export default function HelpPage() {
           <div className="space-y-4">
             {popularArticles.map((article, index) => (
               <ScrollReveal key={article.id} delay={index * 50}>
-                <TiltCard className="bg-white">
+                <Card className="bg-white">
                   <button
                     onClick={() => toggleArticle(article.id)}
                     className="w-full flex items-center justify-between p-6 text-left"
@@ -334,7 +334,7 @@ export default function HelpPage() {
                       </p>
                     </div>
                   )}
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>
@@ -360,7 +360,7 @@ export default function HelpPage() {
                   {articles
                     .filter((article) => article.category === category)
                     .map((article, index) => (
-                      <TiltCard key={article.id} className="bg-white hover:shadow-lg transition-shadow">
+                      <Card key={article.id} className="bg-white hover:shadow-lg transition-shadow">
                         <button
                           onClick={() => toggleArticle(article.id)}
                           className="w-full flex items-center justify-between p-5 text-left"
@@ -381,7 +381,7 @@ export default function HelpPage() {
                             </p>
                           </div>
                         )}
-                      </TiltCard>
+                      </Card>
                     ))}
                 </div>
               </div>
@@ -394,7 +394,7 @@ export default function HelpPage() {
       <section className="relative py-24 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         <div className="max-w-4xl mx-auto px-6">
           <ScrollReveal>
-            <TiltCard className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
+            <Card className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
               <Sparkles className="w-16 h-16 mx-auto mb-6 animate-float" />
               <h2 className="text-4xl font-black mb-4">
                 Still Need Help?
@@ -413,7 +413,7 @@ export default function HelpPage() {
                 </Button>
               </div>
               <p className="text-sm text-blue-200 mt-6">Average response time: 4 hours</p>
-            </TiltCard>
+            </Card>
           </ScrollReveal>
         </div>
       </section>

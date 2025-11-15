@@ -1,14 +1,14 @@
 /**
  * Features Page - World-Class UI
  * Comprehensive overview of Sivio's capabilities
- * Enhanced with TiltCard, ScrollReveal, animations, and status badges
+ * Enhanced with Card, ScrollReveal, animations, and status badges
  */
 
 'use client'
 
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -192,7 +192,7 @@ export default function FeaturesPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <ScrollReveal key={feature.id} delay={index * 100}>
-                <TiltCard className="h-full relative overflow-hidden">
+                <Card className="h-full relative overflow-hidden">
                   {/* Status Badge */}
                   <div className="absolute top-4 right-4 z-10">
                     <span className={`${feature.statusColor} text-white text-xs font-bold px-3 py-1 rounded-full`}>
@@ -244,7 +244,7 @@ export default function FeaturesPage() {
                   <div className="mt-6 bg-gray-100 rounded-xl p-12 text-center text-6xl">
                     {feature.image}
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>

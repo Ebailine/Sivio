@@ -1,7 +1,7 @@
 /**
  * Changelog Page - World-Class UI
  * Product updates and releases with 12+ realistic entries
- * Enhanced with TiltCard, ScrollReveal, Button, and animations
+ * Enhanced with Card, ScrollReveal, Button, and animations
  */
 
 'use client'
@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -341,7 +341,7 @@ export default function ChangelogPage() {
           <div className="space-y-8">
             {filteredUpdates.map((update, index) => (
               <ScrollReveal key={update.version} delay={index * 50}>
-                <TiltCard className="bg-white">
+                <Card className="bg-white">
                   {/* Header */}
                   <div className="p-8 pb-6">
                     <div className="flex items-start justify-between mb-4">
@@ -386,7 +386,7 @@ export default function ChangelogPage() {
                       ))}
                     </div>
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>
@@ -397,7 +397,7 @@ export default function ChangelogPage() {
       <section className="relative py-24 bg-white">
         <div className="max-w-4xl mx-auto px-6">
           <ScrollReveal>
-            <TiltCard className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
+            <Card className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
               <TrendingUp className="w-16 h-16 mx-auto mb-6 animate-float" />
               <h2 className="text-4xl font-black mb-4">
                 Stay in the Loop
@@ -417,7 +417,7 @@ export default function ChangelogPage() {
                 </Button>
               </div>
               <p className="text-sm text-blue-200 mt-4">Join 10,000+ students. Unsubscribe anytime.</p>
-            </TiltCard>
+            </Card>
           </ScrollReveal>
         </div>
       </section>

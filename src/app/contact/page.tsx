@@ -1,7 +1,7 @@
 /**
  * Contact Page - World-Class UI
  * Working contact form, multiple contact methods, FAQs, and quick response guarantees
- * Enhanced with TiltCard, ScrollReveal, Button, and animations
+ * Enhanced with Card, ScrollReveal, Button, and animations
  */
 
 'use client'
@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -188,7 +188,7 @@ export default function ContactPage() {
             {contactMethods.map((method, index) => (
               <ScrollReveal key={index} delay={index * 100}>
                 <a href={method.href} className="block h-full">
-                  <TiltCard className="h-full hover:shadow-2xl transition-shadow">
+                  <Card className="h-full hover:shadow-2xl transition-shadow">
                     <div className={`${method.bgColor} w-14 h-14 rounded-xl flex items-center justify-center mb-4`}>
                       {method.icon}
                     </div>
@@ -207,7 +207,7 @@ export default function ContactPage() {
                         <span>Response: {method.responseTime}</span>
                       </div>
                     </div>
-                  </TiltCard>
+                  </Card>
                 </a>
               </ScrollReveal>
             ))}
@@ -221,7 +221,7 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <ScrollReveal>
-              <TiltCard className="bg-white rounded-3xl p-8 lg:p-12">
+              <Card className="bg-white rounded-3xl p-8 lg:p-12">
                 <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">
                   Send us a Message
                 </h2>
@@ -318,14 +318,14 @@ export default function ContactPage() {
                     We typically respond within 24 hours
                   </p>
                 </form>
-              </TiltCard>
+              </Card>
             </ScrollReveal>
 
             {/* Right Column - Office Locations + Social */}
             <div className="space-y-8">
               {/* Office Locations */}
               <ScrollReveal delay={100}>
-                <TiltCard className="bg-white rounded-3xl p-8">
+                <Card className="bg-white rounded-3xl p-8">
                   <h3 className="text-2xl font-black text-gray-900 mb-6">
                     Our Offices
                   </h3>
@@ -341,12 +341,12 @@ export default function ContactPage() {
                       </div>
                     ))}
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
 
               {/* Social Media */}
               <ScrollReveal delay={200}>
-                <TiltCard className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white p-8">
+                <Card className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white p-8">
                   <h3 className="text-2xl font-black mb-4">
                     Follow Us
                   </h3>
@@ -373,12 +373,12 @@ export default function ContactPage() {
                       <Github className="w-6 h-6" />
                     </a>
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
 
               {/* Enterprise CTA */}
               <ScrollReveal delay={300}>
-                <TiltCard className="bg-white rounded-3xl p-8 border-2 border-purple-200">
+                <Card className="bg-white rounded-3xl p-8 border-2 border-purple-200">
                   <div className="flex items-center gap-3 mb-4">
                     <Briefcase className="w-8 h-8 text-purple-600" />
                     <h3 className="text-2xl font-black text-gray-900">
@@ -392,7 +392,7 @@ export default function ContactPage() {
                     Contact Sales
                     <ArrowRight className="w-5 h-5" />
                   </Button>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             </div>
           </div>
@@ -417,12 +417,12 @@ export default function ContactPage() {
           <div className="space-y-6">
             {faqs.map((faq, index) => (
               <ScrollReveal key={index} delay={index * 100}>
-                <TiltCard className="bg-white rounded-2xl p-6">
+                <Card className="bg-white rounded-2xl p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-3">
                     {faq.question}
                   </h3>
                   <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>

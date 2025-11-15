@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink, Building2, CheckCircle2 } from 'lucide-react'
-import { TiltCard } from './ui/TiltCard'
+import { FloatingCard } from './ui/FloatingCard'
 import { Button } from './ui/Button'
 
 interface JobCardProps {
@@ -71,9 +71,9 @@ export default function JobCard({ job, isSaved = false, isApplied = false, onSav
   }
 
   return (
-    <TiltCard
+    <FloatingCard
       onClick={onClick}
-      className="cursor-pointer group hover:border-blue-500 transition-colors h-full"
+      className="bg-white rounded-xl border-2 border-gray-200 p-6 cursor-pointer group hover:border-blue-500 hover:shadow-2xl transition-all h-full"
     >
       {/* Header with company logo and bookmark */}
       <div className="flex gap-4 mb-4">
@@ -206,6 +206,6 @@ export default function JobCard({ job, isSaved = false, isApplied = false, onSav
           )}
         </div>
       </div>
-    </TiltCard>
+    </FloatingCard>
   )
 }

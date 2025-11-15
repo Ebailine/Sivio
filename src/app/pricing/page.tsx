@@ -1,7 +1,7 @@
 /**
  * Pricing Page - World-Class UI
  * Transparent pricing tiers with annual toggle, comparison table, and trust signals
- * Enhanced with TiltCard, ScrollReveal, Button, and comprehensive FAQ
+ * Enhanced with Card, ScrollReveal, Button, and comprehensive FAQ
  */
 
 'use client'
@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
-import { TiltCard } from '@/components/ui/TiltCard'
+import { Card } from '@/components/ui/Card'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import {
@@ -205,7 +205,7 @@ export default function PricingPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan, index) => (
               <ScrollReveal key={plan.name} delay={index * 100}>
-                <TiltCard className={`h-full relative ${plan.popular ? 'ring-4 ring-blue-500 shadow-2xl' : ''}`}>
+                <Card className={`h-full relative ${plan.popular ? 'ring-4 ring-blue-500 shadow-2xl' : ''}`}>
                   {plan.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg z-10">
                       ⭐ MOST POPULAR
@@ -285,7 +285,7 @@ export default function PricingPage() {
                       </>
                     )}
                   </div>
-                </TiltCard>
+                </Card>
               </ScrollReveal>
             ))}
           </div>
