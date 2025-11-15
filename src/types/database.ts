@@ -147,6 +147,74 @@ export type Database = {
           created_at: string
         }
       }
+      applications: {
+        Row: {
+          id: string
+          user_id: string
+          job_id: string
+          job_title: string
+          company_name: string
+          company_logo_url: string | null
+          location: string | null
+          employment_type: string | null
+          seniority_level: string | null
+          salary_range: string | null
+          stage: string
+          status: string
+          applied_date: string
+          upcoming_interview: string | null
+          offer_date: string | null
+          acceptance_date: string | null
+          rejection_date: string | null
+          notes: any // JSONB array of {id: string, text: string, date: string}
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          job_id: string
+          job_title: string
+          company_name: string
+          company_logo_url?: string | null
+          location?: string | null
+          employment_type?: string | null
+          seniority_level?: string | null
+          salary_range?: string | null
+          stage?: string
+          status?: string
+          applied_date?: string
+          upcoming_interview?: string | null
+          offer_date?: string | null
+          acceptance_date?: string | null
+          rejection_date?: string | null
+          notes?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          job_id?: string
+          job_title?: string
+          company_name?: string
+          company_logo_url?: string | null
+          location?: string | null
+          employment_type?: string | null
+          seniority_level?: string | null
+          salary_range?: string | null
+          stage?: string
+          status?: string
+          applied_date?: string
+          upcoming_interview?: string | null
+          offer_date?: string | null
+          acceptance_date?: string | null
+          rejection_date?: string | null
+          notes?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

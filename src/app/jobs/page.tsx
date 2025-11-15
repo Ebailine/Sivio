@@ -39,6 +39,7 @@ export default function JobsPage() {
   // UI states
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set())
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set())
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -47,6 +48,7 @@ export default function JobsPage() {
   useEffect(() => {
     if (isLoaded && user) {
       fetchSavedJobs()
+      fetchAppliedJobs()
     }
   }, [isLoaded, user])
 
@@ -105,6 +107,17 @@ export default function JobsPage() {
     }
   }
 
+  const fetchAppliedJobs = async () => {
+    try {
+      const response = await fetch('/api/applications')
+      const data = await response.json()
+      const appliedIds = data.applications?.map((app: any) => app.job_id) || []
+      setAppliedJobIds(new Set(appliedIds))
+    } catch (error) {
+      console.error('Error fetching applied jobs:', error)
+    }
+  }
+
   const handleSave = async (jobId: string) => {
     try {
       const response = await fetch('/api/jobs/saved', {
@@ -126,6 +139,41 @@ export default function JobsPage() {
       })
     } catch (error) {
       console.error('Error saving job:', error)
+    }
+  }
+
+  const handleApply = async (job: any) => {
+    try {
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.job_id,
+          jobTitle: job.job_title,
+          companyName: job.company_name,
+          companyLogoUrl: job.company_logo_url,
+          location: job.location,
+          employmentType: job.employment_type,
+          seniorityLevel: job.seniority_level,
+          salaryRange: job.salary_range,
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setAppliedJobIds(prev => new Set(prev).add(job.job_id))
+        // Optionally show success toast
+        alert('Successfully marked as applied! Check your CRM to track this application.')
+      } else if (response.status === 409) {
+        // Already applied
+        alert('You have already applied to this job.')
+      } else {
+        throw new Error(data.error || 'Failed to mark as applied')
+      }
+    } catch (error: any) {
+      console.error('Error marking as applied:', error)
+      alert(error.message || 'Failed to mark as applied. Please try again.')
     }
   }
 
@@ -597,7 +645,9 @@ export default function JobsPage() {
                     key={job.job_id}
                     job={job}
                     isSaved={savedJobIds.has(job.job_id)}
+                    isApplied={appliedJobIds.has(job.job_id)}
                     onSave={user ? handleSave : undefined}
+                    onApply={user ? handleApply : undefined}
                     onClick={() => openJobDetail(job.job_id)}
                   />
                 ))}

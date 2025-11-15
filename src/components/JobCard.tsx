@@ -6,7 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink, Building2 } from 'lucide-react'
+import { Bookmark, BookmarkCheck, MapPin, DollarSign, Briefcase, CalendarDays, ExternalLink, Building2, CheckCircle2 } from 'lucide-react'
 import { TiltCard } from './ui/TiltCard'
 import { Button } from './ui/Button'
 
@@ -24,17 +24,25 @@ interface JobCardProps {
     easy_apply?: boolean
   }
   isSaved?: boolean
+  isApplied?: boolean
   onSave?: (jobId: string) => Promise<void>
+  onApply?: (job: any) => Promise<void>
   onClick?: () => void
 }
 
-export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCardProps) {
+export default function JobCard({ job, isSaved = false, isApplied = false, onSave, onApply, onClick }: JobCardProps) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(isSaved)
+  const [applying, setApplying] = useState(false)
+  const [applied, setApplied] = useState(isApplied)
 
   useEffect(() => {
     setSaved(isSaved)
   }, [isSaved])
+
+  useEffect(() => {
+    setApplied(isApplied)
+  }, [isApplied])
 
   const handleSave = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -46,6 +54,19 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
       setSaved(!saved)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleApply = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onApply || applied) return
+
+    setApplying(true)
+    try {
+      await onApply(job)
+      setApplied(true)
+    } finally {
+      setApplying(false)
     }
   }
 
@@ -149,19 +170,41 @@ export default function JobCard({ job, isSaved = false, onSave, onClick }: JobCa
         )}
       </div>
 
-      {/* Action Button */}
-      <div className="pt-4 border-t border-gray-100">
-        <Button
-          variant="gradient"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            onClick?.()
-          }}
-          className="w-full"
-        >
-          View Details
-        </Button>
+      {/* Action Buttons */}
+      <div className="pt-4 border-t border-gray-100 space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick?.()
+            }}
+          >
+            View Details
+          </Button>
+
+          {onApply && (
+            <Button
+              variant={applied ? 'ghost' : 'gradient'}
+              size="sm"
+              onClick={handleApply}
+              disabled={applying || applied}
+              className={applied ? 'cursor-default' : ''}
+            >
+              {applied ? (
+                <>
+                  <CheckCircle2 size={14} />
+                  Applied
+                </>
+              ) : applying ? (
+                'Applying...'
+              ) : (
+                'Mark as Applied'
+              )}
+            </Button>
+          )}
+        </div>
       </div>
     </TiltCard>
   )
