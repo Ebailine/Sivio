@@ -8,6 +8,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
+import MainNav from '@/components/MainNav'
+import InteractiveCard from '@/components/InteractiveCard'
+import AnimatedButton from '@/components/AnimatedButton'
+import ParallaxSection from '@/components/ParallaxSection'
+import CountUpNumber from '@/components/CountUpNumber'
 import {
   Sparkles,
   Zap,
@@ -32,12 +37,15 @@ import {
   PlayCircle,
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   const { isSignedIn, user } = useUser()
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'elite'>('pro')
 
   return (
     <div className="min-h-screen bg-white">
+      <MainNav />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
@@ -87,19 +95,32 @@ export default function Home() {
               )}
             </div>
 
-            {/* Stats */}
+            {/* Stats with Count Up Animation */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-              {[
-                { number: '10,000+', label: 'Students Placed' },
-                { number: '85%', label: 'Interview Rate' },
-                { number: '5hrs', label: 'Saved Weekly' },
-                { number: '$75K', label: 'Avg Offer' },
-              ].map((stat, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="text-4xl font-black mb-2">{stat.number}</div>
-                  <div className="text-blue-100 text-sm">{stat.label}</div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-4xl font-black mb-2">
+                  <CountUpNumber value={10000} suffix="+" />
                 </div>
-              ))}
+                <div className="text-blue-100 text-sm">Students Placed</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-4xl font-black mb-2">
+                  <CountUpNumber value={85} suffix="%" />
+                </div>
+                <div className="text-blue-100 text-sm">Interview Rate</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-4xl font-black mb-2">
+                  <CountUpNumber value={5} suffix="hrs" />
+                </div>
+                <div className="text-blue-100 text-sm">Saved Weekly</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-4xl font-black mb-2">
+                  $<CountUpNumber value={75} suffix="K" />
+                </div>
+                <div className="text-blue-100 text-sm">Avg Offer</div>
+              </div>
             </div>
           </div>
         </div>
@@ -147,11 +168,15 @@ export default function Home() {
                 description: 'No system to track applications, follow up with contacts, or optimize your approach'
               },
             ].map((item, index) => (
-              <div key={index} className="bg-red-50 rounded-2xl p-8 border-2 border-red-200">
-                <div className="mb-4">{item.icon}</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.problem}</h3>
-                <p className="text-gray-700">{item.description}</p>
-              </div>
+              <ParallaxSection key={index} intensity={0.3}>
+                <InteractiveCard tilt glow={false}>
+                  <div className="bg-red-50 p-8 border-2 border-red-200">
+                    <div className="mb-4">{item.icon}</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.problem}</h3>
+                    <p className="text-gray-700">{item.description}</p>
+                  </div>
+                </InteractiveCard>
+              </ParallaxSection>
             ))}
           </div>
         </div>
@@ -212,15 +237,19 @@ export default function Home() {
                 benefit: 'Ace every interview'
               },
             ].map((feature, index) => (
-              <div key={index} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 border border-gray-200/50">
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 mb-4">{feature.description}</p>
-                <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  <CheckCircle2 size={16} />
-                  {feature.benefit}
-                </div>
-              </div>
+              <ParallaxSection key={index} intensity={0.2} offset={index * 20}>
+                <InteractiveCard tilt glow maxTilt={8}>
+                  <div className="p-8">
+                    <div className="mb-4">{feature.icon}</div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                    <p className="text-gray-600 mb-4">{feature.description}</p>
+                    <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                      <CheckCircle2 size={16} />
+                      {feature.benefit}
+                    </div>
+                  </div>
+                </InteractiveCard>
+              </ParallaxSection>
             ))}
           </div>
         </div>

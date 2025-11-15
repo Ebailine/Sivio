@@ -5,6 +5,8 @@ import { ClerkProvider } from '@clerk/nextjs'
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Sivio - AI Job Application Assistant",
   description: "Automate your job search with AI-powered contact discovery and personalized outreach",
