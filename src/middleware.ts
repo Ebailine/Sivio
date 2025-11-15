@@ -4,6 +4,16 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  // Public marketing pages
+  '/jobs(.*)',
+  '/features(.*)',
+  '/pricing(.*)',
+  '/about(.*)',
+  '/contact(.*)',
+  '/blog(.*)',
+  '/help(.*)',
+  '/changelog(.*)',
+  // API routes
   '/api/webhooks(.*)',
   '/api/jobs/sync',  // Allow Vercel cron to access sync endpoint
   '/api/admin/cache-cleanup',  // Allow Vercel cron to access cache cleanup endpoint
