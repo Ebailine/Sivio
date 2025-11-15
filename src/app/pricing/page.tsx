@@ -3,6 +3,8 @@
  * Transparent pricing tiers for Sivio
  */
 
+'use client'
+
 import Link from 'next/link'
 import MainNav from '@/components/MainNav'
 import InteractiveCard from '@/components/InteractiveCard'

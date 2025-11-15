@@ -3,6 +3,8 @@
  * Career advice and tips for students
  */
 
+'use client'
+
 import MainNav from '@/components/MainNav'
 import InteractiveCard from '@/components/InteractiveCard'
 import { Calendar, User, ArrowRight } from 'lucide-react'

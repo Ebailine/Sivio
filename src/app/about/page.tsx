@@ -3,6 +3,8 @@
  * Learn about Sivio's mission and team
  */
 
+'use client'
+
 import MainNav from '@/components/MainNav'
 import InteractiveCard from '@/components/InteractiveCard'
 import AnimatedButton from '@/components/AnimatedButton'

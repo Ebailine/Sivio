@@ -3,6 +3,8 @@
  * Product updates and releases
  */
 
+'use client'
+
 import MainNav from '@/components/MainNav'
 import { Sparkles, Zap, Bug, Package } from 'lucide-react'
 

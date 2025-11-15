@@ -3,6 +3,8 @@
  * Comprehensive overview of Sivio's capabilities
  */
 
+'use client'
+
 import Link from 'next/link'
 import MainNav from '@/components/MainNav'
 import InteractiveCard from '@/components/InteractiveCard'
