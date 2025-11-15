@@ -14,6 +14,29 @@ export default function MainNav() {
   const { isSignedIn } = useUser()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  const handleMouseEnter = (dropdown: string) => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout)
+      setCloseTimeout(null)
+    }
+    setOpenDropdown(dropdown)
+  }
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setOpenDropdown(null)
+    }, 150) // 150ms delay to allow mouse to move into dropdown
+    setCloseTimeout(timeout)
+  }
+
+  const handleDropdownEnter = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout)
+      setCloseTimeout(null)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200/50 shadow-sm transition-all duration-300">
@@ -31,18 +54,24 @@ export default function MainNav() {
             {/* Product Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => setOpenDropdown('product')}
-                onMouseLeave={() => setOpenDropdown(null)}
+                onMouseEnter={() => handleMouseEnter('product')}
+                onMouseLeave={handleMouseLeave}
                 className="flex items-center gap-1 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Product
                 <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === 'product' ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Hover bridge - invisible div between button and dropdown */}
+              {openDropdown === 'product' && (
+                <div className="absolute top-full left-0 right-0 h-2" onMouseEnter={handleDropdownEnter} />
+              )}
+
               {openDropdown === 'product' && (
                 <div
-                  onMouseEnter={() => setOpenDropdown('product')}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn"
+                  onMouseEnter={handleDropdownEnter}
+                  onMouseLeave={handleMouseLeave}
+                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn z-[100]"
                 >
                   <Link href="/features" className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="font-semibold text-gray-900">Features</div>
@@ -59,22 +88,32 @@ export default function MainNav() {
             {/* Solutions Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => setOpenDropdown('solutions')}
-                onMouseLeave={() => setOpenDropdown(null)}
+                onMouseEnter={() => handleMouseEnter('solutions')}
+                onMouseLeave={handleMouseLeave}
                 className="flex items-center gap-1 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Solutions
                 <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === 'solutions' ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Hover bridge */}
+              {openDropdown === 'solutions' && (
+                <div className="absolute top-full left-0 right-0 h-2" onMouseEnter={handleDropdownEnter} />
+              )}
+
               {openDropdown === 'solutions' && (
                 <div
-                  onMouseEnter={() => setOpenDropdown('solutions')}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn"
+                  onMouseEnter={handleDropdownEnter}
+                  onMouseLeave={handleMouseLeave}
+                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn z-[100]"
                 >
                   <Link href="/jobs" className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="font-semibold text-gray-900">Browse Jobs</div>
                     <div className="text-sm text-gray-600">50,000+ internships</div>
+                  </Link>
+                  <Link href="/crm" className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="font-semibold text-gray-900">CRM</div>
+                    <div className="text-sm text-gray-600">Track applications</div>
                   </Link>
                 </div>
               )}
@@ -83,18 +122,24 @@ export default function MainNav() {
             {/* Resources Dropdown */}
             <div className="relative">
               <button
-                onMouseEnter={() => setOpenDropdown('resources')}
-                onMouseLeave={() => setOpenDropdown(null)}
+                onMouseEnter={() => handleMouseEnter('resources')}
+                onMouseLeave={handleMouseLeave}
                 className="flex items-center gap-1 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Resources
                 <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === 'resources' ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Hover bridge */}
+              {openDropdown === 'resources' && (
+                <div className="absolute top-full left-0 right-0 h-2" onMouseEnter={handleDropdownEnter} />
+              )}
+
               {openDropdown === 'resources' && (
                 <div
-                  onMouseEnter={() => setOpenDropdown('resources')}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn"
+                  onMouseEnter={handleDropdownEnter}
+                  onMouseLeave={handleMouseLeave}
+                  className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 animate-fadeIn z-[100]"
                 >
                   <Link href="/blog" className="block px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="font-semibold text-gray-900">Blog</div>
