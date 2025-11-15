@@ -6,7 +6,8 @@
 'use client'
 
 import { useRef, useState, useEffect, MouseEvent as ReactMouseEvent } from 'react'
-import { motion } from 'framer-motion'
+import { MotionDiv, MotionSpan } from '@/components/ui/Motion'
+import { ClientOnly } from '@/components/ui/ClientOnly'
 import Link from 'next/link'
 
 interface AnimatedButtonProps {
@@ -105,18 +106,18 @@ export default function AnimatedButton({
   `
 
   const content = (
-    <>
-      <motion.span
+    <ClientOnly>
+      <MotionSpan
         className="relative z-10 flex items-center justify-center gap-2"
         animate={{ scale: isHovered ? 1.05 : 1 }}
         transition={{ duration: 0.2 }}
       >
         {children}
-      </motion.span>
+      </MotionSpan>
 
       {/* Ripple Effect */}
       {ripple && ripples.map((ripple) => (
-        <motion.span
+        <MotionSpan
           key={ripple.id}
           className="absolute rounded-full bg-white/30 pointer-events-none"
           style={{
@@ -130,18 +131,45 @@ export default function AnimatedButton({
       ))}
 
       {/* Hover Gradient Overlay */}
-      <motion.div
+      <MotionDiv
         className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 pointer-events-none"
         initial={{ x: '-100%' }}
         animate={{ x: isHovered ? '100%' : '-100%' }}
         transition={{ duration: 0.6, ease: 'easeInOut' }}
       />
-    </>
+    </ClientOnly>
   )
 
   if (href && !disabled) {
     return (
-      <motion.div
+      <ClientOnly>
+        <MotionDiv
+          animate={{
+            x: magneticOffset.x,
+            y: magneticOffset.y,
+            scale: isHovered ? 1.05 : 1,
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+          <Link
+            href={href}
+            ref={buttonRef as any}
+            className={baseStyles}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick as any}
+          >
+            {content}
+          </Link>
+        </MotionDiv>
+      </ClientOnly>
+    )
+  }
+
+  return (
+    <ClientOnly>
+      <MotionDiv
         animate={{
           x: magneticOffset.x,
           y: magneticOffset.y,
@@ -149,42 +177,19 @@ export default function AnimatedButton({
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
-        <Link
-          href={href}
+        <button
           ref={buttonRef as any}
+          type={type}
+          disabled={disabled}
           className={baseStyles}
           onMouseMove={handleMouseMove}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={handleMouseLeave}
-          onClick={handleClick as any}
+          onClick={handleClick}
         >
           {content}
-        </Link>
-      </motion.div>
-    )
-  }
-
-  return (
-    <motion.div
-      animate={{
-        x: magneticOffset.x,
-        y: magneticOffset.y,
-        scale: isHovered ? 1.05 : 1,
-      }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
-      <button
-        ref={buttonRef as any}
-        type={type}
-        disabled={disabled}
-        className={baseStyles}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
-      >
-        {content}
-      </button>
-    </motion.div>
+        </button>
+      </MotionDiv>
+    </ClientOnly>
   )
 }

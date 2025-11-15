@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Treat framer-motion as external for server components
+  serverExternalPackages: ['framer-motion'],
   // Empty turbopack config to silence warnings
   turbopack: {},
 };

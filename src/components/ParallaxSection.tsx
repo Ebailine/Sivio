@@ -6,7 +6,8 @@
 'use client'
 
 import { useRef, ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { MotionDiv } from '@/components/ui/Motion'
+import { ClientOnly } from '@/components/ui/ClientOnly'
 import { useParallax } from '@/hooks/useParallax'
 
 interface ParallaxSectionProps {
@@ -38,15 +39,17 @@ export default function ParallaxSection({
   })
 
   return (
-    <motion.div
-      ref={sectionRef}
-      className={`relative ${className}`}
-      style={{
-        transform: `translate(${parallaxValues.x}px, ${parallaxValues.y + parallaxValues.scrollY + offset}px)`,
-      }}
-      transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-    >
-      {children}
-    </motion.div>
+    <ClientOnly>
+      <MotionDiv
+        ref={sectionRef as any}
+        className={`relative ${className}`}
+        style={{
+          transform: `translate(${parallaxValues.x}px, ${parallaxValues.y + parallaxValues.scrollY + offset}px)`,
+        }}
+        transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+      >
+        {children}
+      </MotionDiv>
+    </ClientOnly>
   )
 }

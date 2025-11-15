@@ -6,7 +6,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { MotionSpan } from '@/components/ui/Motion'
+import { ClientOnly } from '@/components/ui/ClientOnly'
+import { useInView } from 'react-intersection-observer'
 
 interface CountUpNumberProps {
   value: number
@@ -28,8 +30,10 @@ export default function CountUpNumber({
   startOnView = true,
 }: CountUpNumberProps) {
   const [count, setCount] = useState(0)
-  const countRef = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(countRef, { once: true, margin: '-100px' })
+  const { ref: countRef, inView: isInView } = useInView({
+    triggerOnce: true,
+    rootMargin: '-100px'
+  })
   const [hasStarted, setHasStarted] = useState(!startOnView)
 
   useEffect(() => {
@@ -80,16 +84,18 @@ export default function CountUpNumber({
   }
 
   return (
-    <motion.span
-      ref={countRef}
-      className={className}
-      initial={{ opacity: 0, y: 20 }}
-      animate={hasStarted ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5 }}
-    >
-      {prefix}
-      {formatNumber(count)}
-      {suffix}
-    </motion.span>
+    <ClientOnly>
+      <MotionSpan
+        ref={countRef as any}
+        className={className}
+        initial={{ opacity: 0, y: 20 }}
+        animate={hasStarted ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5 }}
+      >
+        {prefix}
+        {formatNumber(count)}
+        {suffix}
+      </MotionSpan>
+    </ClientOnly>
   )
 }

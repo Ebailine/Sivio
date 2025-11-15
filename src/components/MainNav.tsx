@@ -8,7 +8,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useUser, UserButton } from '@clerk/nextjs'
-import { motion, AnimatePresence } from 'framer-motion'
+import { MotionDiv, AnimatePresence } from '@/components/ui/Motion'
+import { ClientOnly } from '@/components/ui/ClientOnly'
 import {
   ChevronDown,
   Zap,
@@ -161,16 +162,17 @@ export default function MainNav() {
                 </button>
 
                 {/* Dropdown */}
-                <AnimatePresence>
-                  {activeDropdown === key && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden"
-                      onMouseLeave={() => setActiveDropdown(null)}
-                    >
+                <ClientOnly>
+                  <AnimatePresence>
+                    {activeDropdown === key && (
+                      <MotionDiv
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden"
+                        onMouseLeave={() => setActiveDropdown(null)}
+                      >
                       <div className="p-2">
                         {menu.items.map((item) => (
                           <Link
@@ -191,9 +193,10 @@ export default function MainNav() {
                           </Link>
                         ))}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </MotionDiv>
+                    )}
+                  </AnimatePresence>
+                </ClientOnly>
               </div>
             ))}
 
@@ -252,15 +255,16 @@ export default function MainNav() {
         </div>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden overflow-hidden"
-            >
+        <ClientOnly>
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <MotionDiv
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="lg:hidden overflow-hidden"
+              >
               <div className="py-4 space-y-2">
                 {/* Mobile Dropdowns */}
                 {Object.entries(dropdownMenus).map(([key, menu]) => (
@@ -277,14 +281,15 @@ export default function MainNav() {
                         }`}
                       />
                     </button>
-                    <AnimatePresence>
-                      {activeDropdown === key && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="space-y-1 pl-4"
-                        >
+                    <ClientOnly>
+                      <AnimatePresence>
+                        {activeDropdown === key && (
+                          <MotionDiv
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-1 pl-4"
+                          >
                           {menu.items.map((item) => (
                             <Link
                               key={item.href}
@@ -299,9 +304,10 @@ export default function MainNav() {
                               <span>{item.label}</span>
                             </Link>
                           ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                        </MotionDiv>
+                        )}
+                      </AnimatePresence>
+                    </ClientOnly>
                   </div>
                 ))}
 
@@ -341,9 +347,10 @@ export default function MainNav() {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </MotionDiv>
+            )}
+          </AnimatePresence>
+        </ClientOnly>
       </nav>
     </header>
   )

@@ -6,7 +6,8 @@
 'use client'
 
 import { useRef, useState, ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { MotionDiv } from '@/components/ui/Motion'
+import { ClientOnly } from '@/components/ui/ClientOnly'
 import { useTilt } from '@/hooks/useTilt'
 
 interface InteractiveCardProps {
@@ -73,45 +74,47 @@ export default function InteractiveCard({
 
   if (flip && frontContent && backContent) {
     return (
-      <div
-        ref={cardRef}
-        className={`relative cursor-pointer ${className}`}
-        style={cardStyle}
-        onClick={handleClick}
-      >
-        <motion.div
-          className="relative w-full h-full"
-          initial={false}
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
-          style={{ transformStyle: 'preserve-3d' }}
+      <ClientOnly>
+        <div
+          ref={cardRef}
+          className={`relative cursor-pointer ${className}`}
+          style={cardStyle}
+          onClick={handleClick}
         >
-          {/* Front */}
-          <div
-            className="absolute inset-0 backface-hidden rounded-2xl bg-white border border-gray-200/50 shadow-lg overflow-hidden"
-            style={{ backfaceVisibility: 'hidden' }}
+          <MotionDiv
+            className="relative w-full h-full"
+            initial={false}
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+            style={{ transformStyle: 'preserve-3d' }}
           >
-            {frontContent}
-            {glareEffect && (
-              <div
-                className="absolute inset-0 pointer-events-none transition-opacity duration-300"
-                style={glareStyle}
-              />
-            )}
-            {glow && (
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
-            )}
-          </div>
+            {/* Front */}
+            <div
+              className="absolute inset-0 backface-hidden rounded-2xl bg-white border border-gray-200/50 shadow-lg overflow-hidden"
+              style={{ backfaceVisibility: 'hidden' }}
+            >
+              {frontContent}
+              {glareEffect && (
+                <div
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+                  style={glareStyle}
+                />
+              )}
+              {glow && (
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+              )}
+            </div>
 
-          {/* Back */}
-          <div
-            className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg overflow-hidden"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-          >
-            {backContent}
-          </div>
-        </motion.div>
-      </div>
+            {/* Back */}
+            <div
+              className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg overflow-hidden"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            >
+              {backContent}
+            </div>
+          </MotionDiv>
+        </div>
+      </ClientOnly>
     )
   }
 
