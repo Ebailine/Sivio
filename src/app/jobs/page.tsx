@@ -6,6 +6,7 @@ import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import JobCard from '@/components/JobCard'
 import JobDetailModal from '@/components/JobDetailModal'
+import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
 import {
   Search, Filter, Briefcase, Grid3x3, List, ChevronDown, ChevronUp,
   X, TrendingUp, Building2, MapPin, DollarSign, Clock, Zap, Users,
@@ -801,6 +802,9 @@ export default function JobsPage() {
         isSaved={selectedJobId ? savedJobIds.has(selectedJobId) : false}
         onSave={user ? handleSave : undefined}
       />
+
+      {/* Onboarding Checklist for signed-in users */}
+      {user && <OnboardingChecklist />}
     </div>
   )
 }

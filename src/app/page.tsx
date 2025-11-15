@@ -14,6 +14,7 @@ import { CountUpNumber } from '@/components/ui/CountUpNumber'
 import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import { MouseGradient } from '@/components/ui/MouseGradient'
 import { GradientText } from '@/components/ui/GradientText'
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
 import {
   Sparkles,
   Zap,
@@ -109,6 +110,9 @@ export default function Home() {
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Floating particles background */}
       <ParticlesBackground />
+
+      {/* Welcome Modal for first-time visitors */}
+      {!isSignedIn && <WelcomeModal />}
 
       <MainNav />
 
