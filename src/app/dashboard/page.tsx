@@ -58,13 +58,70 @@ export default async function DashboardPage() {
     savedJobsCount = count || 0
   }
 
-  // Mock data for additional stats (will be real once we build full features)
-  const stats = {
+  // Fetch real stats from database
+  let stats = {
     applicationsSubmitted: 0,
     interviewsScheduled: 0,
     contactsFound: 0,
     responseRate: 0,
     averageResponseTime: 0,
+  }
+
+  if (supabaseUser) {
+    // Fetch all applications for the user
+    const { data: applications } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('user_id', supabaseUser.id)
+
+    // Fetch contacts count
+    const { count: contactsCount } = await supabase
+      .from('contacts')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', supabaseUser.id)
+
+    // Calculate stats
+    const totalApplications = applications?.length || 0
+    const interviewsScheduled = applications?.filter(
+      app => app.stage === 'interviewing' || app.stage === 'offer'
+    ).length || 0
+
+    // Response rate: applications that moved past "applied" stage
+    const applicationsWithResponse = applications?.filter(
+      app => app.stage !== 'applied' && app.stage !== 'saved'
+    ).length || 0
+    const responseRate = totalApplications > 0
+      ? Math.round((applicationsWithResponse / totalApplications) * 100)
+      : 0
+
+    // Average response time: days between created_at and first stage change
+    let totalResponseDays = 0
+    let responseCount = 0
+
+    applications?.forEach(app => {
+      if (app.created_at && app.updated_at && app.stage !== 'applied') {
+        const createdDate = new Date(app.created_at)
+        const updatedDate = new Date(app.updated_at)
+        const daysDiff = Math.floor((updatedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+
+        if (daysDiff > 0) {
+          totalResponseDays += daysDiff
+          responseCount++
+        }
+      }
+    })
+
+    const averageResponseTime = responseCount > 0
+      ? Math.round(totalResponseDays / responseCount)
+      : 0
+
+    stats = {
+      applicationsSubmitted: totalApplications,
+      interviewsScheduled,
+      contactsFound: contactsCount || 0,
+      responseRate,
+      averageResponseTime,
+    }
   }
 
   return (
