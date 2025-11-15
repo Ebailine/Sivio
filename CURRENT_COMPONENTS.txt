@@ -1,0 +1,11 @@
+src/components/AnimatedButton.tsx
+src/components/ContactCard.tsx
+src/components/ContactFinderModal.tsx
+src/components/CountUpNumber.tsx
+src/components/InteractiveCard.tsx
+src/components/JobCard.tsx
+src/components/JobDataGrid.tsx
+src/components/JobDetailModal.tsx
+src/components/MainNav.tsx
+src/components/NavBar.tsx
+src/components/ParallaxSection.tsx

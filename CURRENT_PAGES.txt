@@ -1,0 +1,13 @@
+src/app/_crm/page.tsx
+src/app/about/page.tsx
+src/app/blog/page.tsx
+src/app/changelog/page.tsx
+src/app/contact/page.tsx
+src/app/dashboard/page.tsx
+src/app/features/page.tsx
+src/app/help/page.tsx
+src/app/jobs/page.tsx
+src/app/page.tsx
+src/app/pricing/page.tsx
+src/app/sign-in/[[...sign-in]]/page.tsx
+src/app/sign-up/[[...sign-up]]/page.tsx

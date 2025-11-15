@@ -1,0 +1,16 @@
+src/app/api/admin/cache-cleanup/route.ts
+src/app/api/admin/cache-stats/route.ts
+src/app/api/contacts/route.ts
+src/app/api/contacts/search/route.ts
+src/app/api/jobs/[id]/route.ts
+src/app/api/jobs/route.ts
+src/app/api/jobs/saved/route.ts
+src/app/api/jobs/sync/route.ts
+src/app/api/test-adzuna/route.ts
+src/app/api/test-db/route.ts
+src/app/api/test-direct/route.ts
+src/app/api/test-snov/route.ts
+src/app/api/test-sync/route.ts
+src/app/api/test/job-research/route.ts
+src/app/api/user/credits/route.ts
+src/app/api/webhooks/clerk/route.ts

@@ -37,8 +37,6 @@ import {
   PlayCircle,
 } from 'lucide-react'
 
-export const dynamic = 'force-dynamic'
-
 export default function Home() {
   const { isSignedIn, user } = useUser()
 
