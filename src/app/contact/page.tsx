@@ -7,7 +7,6 @@
 
 import { useState } from 'react'
 import MainNav from '@/components/MainNav'
-import AnimatedButton from '@/components/AnimatedButton'
 import { Mail, MessageSquare, Phone, MapPin } from 'lucide-react'
 
 export default function ContactPage() {
@@ -105,14 +104,12 @@ export default function ContactPage() {
                 />
               </div>
 
-              <AnimatedButton
+              <button
                 type="submit"
-                variant="gradient"
-                size="lg"
-                className="w-full"
+                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200"
               >
                 Send Message
-              </AnimatedButton>
+              </button>
             </form>
           </div>
 
@@ -166,13 +163,12 @@ export default function ContactPage() {
               <p className="text-blue-100 mb-6">
                 Looking to bring Sivio to your university or organization?
               </p>
-              <AnimatedButton
+              <a
                 href="mailto:enterprise@sivio.com"
-                variant="gradient"
-                className="bg-white text-blue-600"
+                className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-200"
               >
                 Contact Sales Team
-              </AnimatedButton>
+              </a>
             </div>
           </div>
         </div>

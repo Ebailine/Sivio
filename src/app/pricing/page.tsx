@@ -7,8 +7,6 @@
 
 import Link from 'next/link'
 import MainNav from '@/components/MainNav'
-import InteractiveCard from '@/components/InteractiveCard'
-import AnimatedButton from '@/components/AnimatedButton'
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react'
 
 export default function PricingPage() {
@@ -130,12 +128,9 @@ export default function PricingPage() {
       <section className="max-w-[1200px] mx-auto px-6 py-16">
         <div className="grid md:grid-cols-3 gap-8">
           {plans.map((plan, index) => (
-            <InteractiveCard
+            <div
               key={plan.name}
-              tilt={plan.popular}
-              glow={plan.popular}
-              maxTilt={plan.popular ? 5 : 0}
-              className={plan.popular ? 'md:-mt-4 md:scale-105' : ''}
+              className={`bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 ${plan.popular ? 'md:-mt-4 md:scale-105' : ''}`}
             >
               <div className="relative overflow-hidden">
                 {plan.popular && (
@@ -162,14 +157,12 @@ export default function PricingPage() {
                     </div>
                   </div>
 
-                  <AnimatedButton
+                  <Link
                     href={plan.name === 'Enterprise' ? '/contact' : '/sign-up'}
-                    variant={plan.name === 'Free' ? 'outline' : 'gradient'}
-                    size="lg"
-                    className={`w-full ${plan.name !== 'Free' ? 'bg-white text-blue-600' : ''}`}
+                    className={`w-full px-8 py-4 rounded-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-200 inline-block text-center ${plan.name !== 'Free' ? 'bg-white text-blue-600' : 'bg-transparent border-2 border-white text-white'}`}
                   >
                     {plan.cta}
-                  </AnimatedButton>
+                  </Link>
                 </div>
 
                 <div className="p-8 space-y-4">
@@ -187,7 +180,7 @@ export default function PricingPage() {
                   ))}
                 </div>
               </div>
-            </InteractiveCard>
+            </div>
           ))}
         </div>
 
@@ -197,13 +190,12 @@ export default function PricingPage() {
           <p className="text-green-100 mb-4">
             Get 20% off any paid plan with a valid .edu email address
           </p>
-          <AnimatedButton
+          <Link
             href="/sign-up"
-            variant="gradient"
-            className="bg-white text-green-600"
+            className="px-8 py-4 bg-white text-green-600 rounded-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-200 inline-block"
           >
             Claim Your Discount
-          </AnimatedButton>
+          </Link>
         </div>
       </section>
 
@@ -236,14 +228,12 @@ export default function PricingPage() {
           <p className="text-xl text-blue-100 mb-8">
             Our team is here to help you find the perfect plan
           </p>
-          <AnimatedButton
+          <Link
             href="/contact"
-            variant="gradient"
-            size="xl"
-            className="bg-white text-blue-600"
+            className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-bold text-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 inline-block"
           >
             Contact Sales
-          </AnimatedButton>
+          </Link>
         </div>
       </section>
 

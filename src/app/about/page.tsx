@@ -5,9 +5,8 @@
 
 'use client'
 
+import Link from 'next/link'
 import MainNav from '@/components/MainNav'
-import InteractiveCard from '@/components/InteractiveCard'
-import AnimatedButton from '@/components/AnimatedButton'
 import { Target, Heart, Zap, Users } from 'lucide-react'
 
 export default function AboutPage() {
@@ -103,7 +102,7 @@ export default function AboutPage() {
         </h2>
         <div className="grid md:grid-cols-2 gap-8">
           {values.map((value, index) => (
-            <InteractiveCard key={index} tilt glow>
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200">
               <div className="p-8">
                 <div className="mb-4">{value.icon}</div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
@@ -111,7 +110,7 @@ export default function AboutPage() {
                 </h3>
                 <p className="text-gray-600">{value.description}</p>
               </div>
-            </InteractiveCard>
+            </div>
           ))}
         </div>
       </section>
@@ -125,14 +124,12 @@ export default function AboutPage() {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Help us create a world where every talented student can land their dream job
           </p>
-          <AnimatedButton
+          <Link
             href="/sign-up"
-            variant="gradient"
-            size="xl"
-            className="bg-white text-blue-600"
+            className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-bold text-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 inline-block"
           >
             Get Started Free
-          </AnimatedButton>
+          </Link>
         </div>
       </section>
 

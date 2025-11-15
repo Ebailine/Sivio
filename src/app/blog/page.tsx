@@ -6,7 +6,6 @@
 'use client'
 
 import MainNav from '@/components/MainNav'
-import InteractiveCard from '@/components/InteractiveCard'
 import { Calendar, User, ArrowRight } from 'lucide-react'
 
 export default function BlogPage() {
@@ -60,7 +59,7 @@ export default function BlogPage() {
       <section className="max-w-[1200px] mx-auto px-6 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {posts.map((post, index) => (
-            <InteractiveCard key={index} tilt glow>
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200">
               <div className="p-8">
                 <div className="text-6xl mb-4">{post.image}</div>
                 <div className="text-sm font-semibold text-blue-600 mb-2">
@@ -88,7 +87,7 @@ export default function BlogPage() {
                   Read More <ArrowRight size={16} />
                 </button>
               </div>
-            </InteractiveCard>
+            </div>
           ))}
         </div>
 

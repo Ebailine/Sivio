@@ -9,10 +9,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import MainNav from '@/components/MainNav'
-import InteractiveCard from '@/components/InteractiveCard'
-import AnimatedButton from '@/components/AnimatedButton'
-import ParallaxSection from '@/components/ParallaxSection'
-import CountUpNumber from '@/components/CountUpNumber'
 import {
   Sparkles,
   Zap,
@@ -97,25 +93,25 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <div className="text-4xl font-black mb-2">
-                  <CountUpNumber value={10000} suffix="+" />
+                  {'$1'}
                 </div>
                 <div className="text-blue-100 text-sm">Students Placed</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <div className="text-4xl font-black mb-2">
-                  <CountUpNumber value={85} suffix="%" />
+                  {'$1'}
                 </div>
                 <div className="text-blue-100 text-sm">Interview Rate</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <div className="text-4xl font-black mb-2">
-                  <CountUpNumber value={5} suffix="hrs" />
+                  {'$1'}
                 </div>
                 <div className="text-blue-100 text-sm">Saved Weekly</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <div className="text-4xl font-black mb-2">
-                  $<CountUpNumber value={75} suffix="K" />
+                  ${'$1'}
                 </div>
                 <div className="text-blue-100 text-sm">Avg Offer</div>
               </div>
@@ -166,15 +162,15 @@ export default function Home() {
                 description: 'No system to track applications, follow up with contacts, or optimize your approach'
               },
             ].map((item, index) => (
-              <ParallaxSection key={index} intensity={0.3}>
-                <InteractiveCard tilt glow={false}>
+              
+                <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200">
                   <div className="bg-red-50 p-8 border-2 border-red-200">
                     <div className="mb-4">{item.icon}</div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-3">{item.problem}</h3>
                     <p className="text-gray-700">{item.description}</p>
                   </div>
-                </InteractiveCard>
-              </ParallaxSection>
+                </div>
+              
             ))}
           </div>
         </div>
@@ -235,8 +231,8 @@ export default function Home() {
                 benefit: 'Ace every interview'
               },
             ].map((feature, index) => (
-              <ParallaxSection key={index} intensity={0.2} offset={index * 20}>
-                <InteractiveCard tilt glow maxTilt={8}>
+              
+                <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200">
                   <div className="p-8">
                     <div className="mb-4">{feature.icon}</div>
                     <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
@@ -246,8 +242,8 @@ export default function Home() {
                       {feature.benefit}
                     </div>
                   </div>
-                </InteractiveCard>
-              </ParallaxSection>
+                </div>
+              
             ))}
           </div>
         </div>

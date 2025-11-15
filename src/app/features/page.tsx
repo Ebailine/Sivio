@@ -7,8 +7,6 @@
 
 import Link from 'next/link'
 import MainNav from '@/components/MainNav'
-import InteractiveCard from '@/components/InteractiveCard'
-import AnimatedButton from '@/components/AnimatedButton'
 import {
   Zap,
   Target,
@@ -132,7 +130,7 @@ export default function FeaturesPage() {
       <section className="max-w-[1200px] mx-auto px-6 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <InteractiveCard key={feature.id} tilt glow>
+            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200">
               <div id={feature.id} className="p-8">
                 <div className="mb-4">{feature.icon}</div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
@@ -163,7 +161,7 @@ export default function FeaturesPage() {
                   </div>
                 </div>
               </div>
-            </InteractiveCard>
+            </div>
           ))}
         </div>
       </section>
@@ -243,22 +241,18 @@ export default function FeaturesPage() {
             Join 10,000+ students who are landing internships faster with Sivio
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <AnimatedButton
+            <Link
               href="/sign-up"
-              variant="gradient"
-              size="xl"
-              className="bg-white text-blue-600 hover:scale-110"
+              className="px-10 py-5 bg-white text-blue-600 rounded-2xl font-bold text-xl hover:shadow-2xl hover:scale-110 transition-all duration-200 inline-block"
             >
               Start Free Trial →
-            </AnimatedButton>
-            <AnimatedButton
+            </Link>
+            <Link
               href="/pricing"
-              variant="outline"
-              size="xl"
-              className="border-white text-white hover:bg-white/10"
+              className="px-10 py-5 border-2 border-white text-white rounded-2xl font-bold text-xl hover:bg-white/10 hover:scale-105 transition-all duration-200 inline-block"
             >
               View Pricing
-            </AnimatedButton>
+            </Link>
           </div>
         </div>
       </section>
