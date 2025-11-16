@@ -133,6 +133,16 @@ export async function POST(request: Request) {
           domain = app.company_name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
         }
 
+        // Extract LinkedIn company URL from company_url if available
+        let linkedinCompanyUrl = '';
+        if (jobData?.company_url && jobData.company_url.includes('linkedin.com/company/')) {
+          linkedinCompanyUrl = jobData.company_url;
+        } else {
+          // Fallback: construct from company name
+          const companySlug = app.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          linkedinCompanyUrl = `https://www.linkedin.com/company/${companySlug}`;
+        }
+
         return {
           applicationId: app.id,
           jobId: app.job_id,
@@ -140,7 +150,7 @@ export async function POST(request: Request) {
           position: app.job_title,
           location: app.location,
           description: jobData?.job_description || '',
-          url: jobData?.job_url || '',
+          url: linkedinCompanyUrl,  // Changed: now sends LinkedIn company URL instead of job URL
           applyUrl: jobData?.apply_url || '',
           domain: domain,
         }
