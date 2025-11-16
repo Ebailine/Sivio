@@ -28,7 +28,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract payload and prepare for processing\nconst payload = $input.item.json.body;\n\nreturn payload.jobs.map(job => ({\n  json: {\n    userId: payload.userId,\n    userEmail: payload.userEmail,\n    contactsPerJob: payload.contactsPerJob,\n    currentJob: job,\n    companyUrl: job.url,\n    searchQuery: \"recruiter talent acquisition HR hiring \" + job.position.split(' ').filter(w => w.length > 3).slice(0, 3).join(' ')\n  }\n}));"
+        "jsCode": "// Extract payload and prepare for processing\nconst payload = $input.item.json.body;\n\n// HR/recruiting keywords for Apify designation field\nconst hrDesignations = [\n  'HR',\n  'HR manager',\n  'recruiter',\n  'talent',\n  'talent acquisition',\n  'people operations',\n  'people partner',\n  'hiring manager',\n  'executive assistant'\n];\n\nreturn payload.jobs.map(job => ({\n  json: {\n    userId: payload.userId,\n    userEmail: payload.userEmail,\n    contactsPerJob: payload.contactsPerJob,\n    currentJob: job,\n    companyUrls: [job.url],\n    designation: hrDesignations,\n    maxResultsPerCompany: 15\n  }\n}));"
       },
       "id": "extract-and-split",
       "name": "Extract & Split Jobs",
@@ -41,12 +41,9 @@
         "actor": "caprolok/linkedin-employees-scraper",
         "waitForFinish": true,
         "input": {
-          "companyUrl": "={{ $json.companyUrl }}",
-          "searchQuery": "={{ $json.searchQuery }}",
-          "maxEmployees": 15,
-          "proxy": {
-            "useApifyProxy": true
-          }
+          "companyUrls": "={{ $json.companyUrls }}",
+          "designation": "={{ $json.designation }}",
+          "maxResultsPerCompany": "={{ $json.maxResultsPerCompany }}"
         },
         "options": {}
       },
