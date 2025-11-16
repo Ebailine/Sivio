@@ -187,8 +187,8 @@ N8N_CONTACT_FINDER_WEBHOOK_URL=https://ebailine.app.n8n.cloud/webhook-test/148ea
 # Apify (reference only, used in n8n)
 APIFY_API_TOKEN=your-apify-api-token-here
 
-# Webhook Secret (to be configured)
-WEBHOOK_SECRET=your-webhook-secret-here
+# Webhook Secret (already configured)
+WEBHOOK_SECRET=wh_sec_contact_finder_n8n_2025_prod_v1_secure_token_xK9mP3nQ7yR2vL8cF4jH6tS1wN5bG0d
 ```
 
 ### n8n (Environment Variables)

@@ -25,11 +25,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: Request) {
   try {
-    // Verify the request is from n8n (using cron secret for now)
+    // Verify the request is from n8n
     const authHeader = request.headers.get('authorization')
-    const expectedSecret = process.env.CRON_SECRET
+    const webhookSecretHeader = request.headers.get('x-webhook-secret')
+    const expectedSecret = process.env.WEBHOOK_SECRET || process.env.CRON_SECRET
 
-    if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+    // Support both authorization formats: Bearer token or custom header
+    const isValid =
+      (authHeader && authHeader === `Bearer ${expectedSecret}`) ||
+      (webhookSecretHeader && webhookSecretHeader === expectedSecret)
+
+    if (!expectedSecret || !isValid) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid webhook secret' },
         { status: 401 }

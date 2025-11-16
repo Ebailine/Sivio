@@ -76,12 +76,9 @@ Before starting, ensure you have:
 2. Name it: `Sivio Webhook Auth`
 3. Add header:
    - **Name**: `x-webhook-secret`
-   - **Value**: `your-webhook-secret-here` (generate a secure random string)
+   - **Value**: `wh_sec_contact_finder_n8n_2025_prod_v1_secure_token_xK9mP3nQ7yR2vL8cF4jH6tS1wN5bG0d`
 4. Click **Save**
-5. **IMPORTANT**: Add this secret to your Sivio `.env.local`:
-   ```bash
-   WEBHOOK_SECRET=your-webhook-secret-here
-   ```
+5. **Note**: This secret is already configured in Sivio's `.env.local` file
 
 #### E. Google Sheets (Optional)
 
@@ -122,8 +119,8 @@ N8N_CONTACT_FINDER_WEBHOOK_URL=https://ebailine.app.n8n.cloud/webhook-test/148ea
 # When ready for production, switch to:
 # N8N_CONTACT_FINDER_WEBHOOK_URL=https://ebailine.app.n8n.cloud/webhook/148eaa2e-ca0f-46be-b4f2-647e48c28da7
 
-# Webhook Secret (must match n8n credential)
-WEBHOOK_SECRET=your-webhook-secret-here
+# Webhook Secret (already configured)
+WEBHOOK_SECRET=wh_sec_contact_finder_n8n_2025_prod_v1_secure_token_xK9mP3nQ7yR2vL8cF4jH6tS1wN5bG0d
 ```
 
 ---

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import CRMEnhanced from '@/components/crm/CRMEnhanced'
 import {
   Briefcase,
   MessageSquare,
@@ -201,6 +202,7 @@ export default function CRMPage() {
   const [newNote, setNewNote] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [userCredits, setUserCredits] = useState(0)
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -219,6 +221,7 @@ export default function CRMPage() {
     }
 
     fetchApplications()
+    fetchUserCredits()
   }, [isLoaded, isSignedIn, router])
 
   const fetchApplications = async () => {
@@ -236,6 +239,18 @@ export default function CRMPage() {
       console.error('Error fetching applications:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchUserCredits = async () => {
+    try {
+      const response = await fetch('/api/users/me')
+      const data = await response.json()
+      if (response.ok && data.user) {
+        setUserCredits(data.user.credits || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching credits:', error)
     }
   }
 
@@ -508,39 +523,61 @@ export default function CRMPage() {
               </div>
             </div>
 
-            {/* Kanban Board */}
+            {/* Enhanced CRM with Table View + Contact Finder */}
             <div className="flex-1 overflow-x-auto">
-              <DndContext
-                sensors={sensors}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                collisionDetection={closestCenter}
-              >
-                <div className="flex gap-4 pb-4">
-                  {STAGES.map(stage => (
-                    <KanbanColumn
-                      key={stage.id}
-                      stage={stage}
-                      applications={groupedApplications[stage.id] || []}
-                    >
-                      {groupedApplications[stage.id]?.map(app => (
-                        <ApplicationCard
-                          key={app.id}
-                          application={app}
-                          onOpen={() => openDetailModal(app)}
-                          onDelete={() => deleteApplication(app.id)}
-                        />
+              <CRMEnhanced
+                applications={filteredApplications}
+                userCredits={userCredits}
+                onRefresh={() => {
+                  fetchApplications()
+                  fetchUserCredits()
+                }}
+                onOpenDetails={openDetailModal}
+                onDelete={deleteApplication}
+                kanbanView={
+                  <DndContext
+                    sensors={sensors}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    collisionDetection={closestCenter}
+                  >
+                    <div className="flex gap-4 pb-4">
+                      {STAGES.map(stage => (
+                        <KanbanColumn
+                          key={stage.id}
+                          stage={stage}
+                          applications={groupedApplications[stage.id] || []}
+                        >
+                          {groupedApplications[stage.id]?.map(app => (
+                            <ApplicationCard
+                              key={app.id}
+                              application={app}
+                              onOpen={() => openDetailModal(app)}
+                              onDelete={() => deleteApplication(app.id)}
+                            />
+                          ))}
+                          {groupedApplications[stage.id]?.length === 0 && (
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                              <Target size={32} className="mx-auto mb-2 opacity-50" />
+                              No applications
+                            </div>
+                          )}
+                        </KanbanColumn>
                       ))}
-                      {groupedApplications[stage.id]?.length === 0 && (
-                        <div className="text-center py-8 text-gray-400 text-sm">
-                          <Target size={32} className="mx-auto mb-2 opacity-50" />
-                          No applications
-                        </div>
-                      )}
-                    </KanbanColumn>
-                  ))}
-                </div>
-              </DndContext>
+                    </div>
+
+                    <DragOverlay>
+                      {activeId ? (
+                        <ApplicationCard
+                          application={applications.find(app => app.id === activeId)!}
+                          onOpen={() => {}}
+                          onDelete={() => {}}
+                        />
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+                }
+              />
             </div>
           </div>
         )}
