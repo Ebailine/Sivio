@@ -37,13 +37,18 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { user_id, contacts } = body
+    const { user_id, application_id, contacts } = body
 
     if (!user_id || !contacts || !Array.isArray(contacts)) {
       return NextResponse.json(
         { error: 'Invalid payload - user_id and contacts array required' },
         { status: 400 }
       )
+    }
+
+    // application_id is optional but recommended for linking contacts to specific job applications
+    if (application_id) {
+      console.log(`[n8n Webhook] Linking contacts to application ${application_id}`)
     }
 
     const supabase = createAdminClient()
@@ -76,6 +81,8 @@ export async function POST(request: Request) {
       metadata: {
         imported_at: new Date().toISOString(),
         apollo_verified: contact.verified || false,
+        application_id: application_id || null,  // Link to application if provided
+        reasoning: contact.reasoning || null,     // AI reasoning for why this contact is relevant
       }
     }))
 
@@ -97,10 +104,59 @@ export async function POST(request: Request) {
     console.log(`[n8n Webhook] Received ${contacts.length} contacts for user ${user_id}`)
     console.log(`[n8n Webhook] Inserted/updated ${insertedContacts?.length || 0} contacts`)
 
+    // If application_id provided, update the application's status
+    if (application_id) {
+      const { error: appUpdateError } = await supabase
+        .from('applications')
+        .update({
+          updated_at: new Date().toISOString(),
+          // Optionally add a note about contacts found
+          notes: supabase.rpc('jsonb_array_append', {
+            target: 'notes',
+            value: {
+              id: crypto.randomUUID(),
+              text: `Contact Finder: Found ${insertedContacts?.length || 0} relevant contacts`,
+              date: new Date().toISOString(),
+              type: 'system'
+            }
+          })
+        })
+        .eq('id', application_id)
+        .eq('user_id', user_id)
+
+      if (appUpdateError) {
+        console.error('Failed to update application:', appUpdateError)
+        // Don't fail the webhook - contacts are already inserted
+      }
+    }
+
+    // Update credit transaction from 'pending' to 'completed'
+    const { error: transactionUpdateError } = await supabase
+      .from('credit_transactions')
+      .update({
+        status: 'completed',
+        metadata: {
+          completed_at: new Date().toISOString(),
+          contacts_found: insertedContacts?.length || 0,
+          application_id: application_id || null
+        }
+      })
+      .eq('user_id', user_id)
+      .eq('type', 'contact_finder')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (transactionUpdateError) {
+      console.error('Failed to update credit transaction:', transactionUpdateError)
+      // Don't fail - contacts are inserted
+    }
+
     return NextResponse.json({
       success: true,
       message: `Processed ${contacts.length} contacts`,
       inserted: insertedContacts?.length || 0,
+      application_id: application_id || null,
     })
 
   } catch (error: any) {
