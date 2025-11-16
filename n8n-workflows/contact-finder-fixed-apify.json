@@ -1,0 +1,251 @@
+{
+  "name": "Contact Finder - Fixed Apify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "148eaa2e-ca0f-46be-b4f2-647e48c28da7",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "148eaa2e-ca0f-46be-b4f2-647e48c28da7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Contact finder started\", \"jobs\": $json.body.jobs.length } }}"
+      },
+      "id": "respond-immediately",
+      "name": "Respond Immediately",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract payload and prepare for processing\nconst payload = $input.item.json.body;\n\nreturn payload.jobs.map(job => ({\n  json: {\n    userId: payload.userId,\n    userEmail: payload.userEmail,\n    contactsPerJob: payload.contactsPerJob,\n    currentJob: job,\n    companyUrl: job.url,\n    searchQuery: \"recruiter talent acquisition HR hiring \" + job.position.split(' ').filter(w => w.length > 3).slice(0, 3).join(' ')\n  }\n}));"
+      },
+      "id": "extract-and-split",
+      "name": "Extract & Split Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "actor": "caprolok/linkedin-employees-scraper",
+        "waitForFinish": true,
+        "input": {
+          "companyUrl": "={{ $json.companyUrl }}",
+          "searchQuery": "={{ $json.searchQuery }}",
+          "maxEmployees": 15,
+          "proxy": {
+            "useApifyProxy": true
+          }
+        },
+        "options": {}
+      },
+      "id": "apify-scrape",
+      "name": "Apify - Scrape Employees",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [840, 300],
+      "credentials": {
+        "apifyApi": {
+          "id": "{{APIFY_CREDENTIAL_ID}}",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate results and score contacts\nconst allResults = $input.all();\nconst jobData = $('Extract & Split Jobs').item.json;\n\nconst employees = allResults.map(item => item.json);\n\nconst hrKeywords = [\n  'recruit', 'talent acquisition', 'talent partner', 'talent',\n  'hr', 'human resources', 'people operations', 'people partner',\n  'hiring', 'staffing', 'sourcer', 'sourcing'\n];\n\nconst positionWords = jobData.currentJob.position.toLowerCase().split(' ');\nconst teamKeywords = positionWords.filter(w => w.length > 3);\n\nconst scored = employees.map(emp => {\n  const headline = (emp.headline || emp.position || emp.title || '').toLowerCase();\n  let score = 0;\n  let role = 'other';\n  \n  // HR role\n  const isHR = hrKeywords.some(k => headline.includes(k));\n  if (isHR) {\n    score = 100;\n    role = 'hr';\n  }\n  \n  // Team role\n  const isTeam = teamKeywords.some(k => headline.includes(k));\n  if (isTeam && !isHR) {\n    score = 70;\n    role = 'team';\n  }\n  \n  // Seniority\n  if (headline.includes('senior') || headline.includes('lead') || headline.includes('director') || headline.includes('head')) score += 20;\n  if (headline.includes('manager')) score += 15;\n  \n  // Location\n  if (emp.location && jobData.currentJob.location) {\n    const empLoc = emp.location.toLowerCase();\n    const jobLoc = jobData.currentJob.location.toLowerCase();\n    if (empLoc.includes(jobLoc) || jobLoc.includes(empLoc)) score += 10;\n  }\n  \n  return { ...emp, score, role };\n});\n\nconst filtered = scored\n  .filter(e => e.score >= 60)\n  .sort((a, b) => b.score - a.score)\n  .slice(0, jobData.contactsPerJob);\n\nreturn [{\n  json: {\n    userId: jobData.userId,\n    userEmail: jobData.userEmail,\n    currentJob: jobData.currentJob,\n    contactsPerJob: jobData.contactsPerJob,\n    employees: filtered\n  }\n}];"
+      },
+      "id": "filter-score",
+      "name": "Filter & Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "content": "={{ \"Rank these LinkedIn contacts for job outreach:\\n\\nJob: \" + $json.currentJob.position + \" at \" + $json.currentJob.company + \"\\nLocation: \" + $json.currentJob.location + \"\\n\\nContacts:\\n\" + JSON.stringify($json.employees.map((e, i) => ({\n  id: i,\n  name: e.fullName || e.name,\n  headline: e.headline || e.position || e.title,\n  location: e.location,\n  score: e.score,\n  role: e.role\n}))) + \"\\n\\nReturn ONLY JSON array (no markdown):\\n[{\\\"id\\\": 0, \\\"finalScore\\\": 95, \\\"reasoning\\\": \\\"Brief why\\\"}]\" }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "openai-rank",
+      "name": "OpenAI Rank",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [1240, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "{{OPENAI_CREDENTIAL_ID}}",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create final contacts\nconst aiData = $input.item.json;\nconst aiContent = aiData.message?.content || aiData.choices?.[0]?.message?.content || '';\nconst jobData = $('Filter & Score').item.json;\n\nlet ranked = [];\ntry {\n  const jsonMatch = aiContent.match(/\\[.*\\]/s);\n  if (jsonMatch) ranked = JSON.parse(jsonMatch[0]);\n} catch (e) {\n  ranked = jobData.employees.map((e, i) => ({ id: i, finalScore: e.score, reasoning: e.role }));\n}\n\nconst contacts = ranked.map(r => {\n  const emp = jobData.employees[r.id];\n  if (!emp) return null;\n  return {\n    name: emp.fullName || emp.name || 'Unknown',\n    position: emp.headline || emp.position || emp.title || '',\n    email: emp.email || null,\n    company: jobData.currentJob.company,\n    linkedin_url: emp.profileUrl || emp.url || emp.linkedinUrl || null,\n    verified: false,\n    relevance_score: r.finalScore || emp.score || 50,\n    reasoning: r.reasoning || emp.role,\n    source: 'linkedin_apify',\n    role_type: emp.role\n  };\n}).filter(Boolean);\n\nreturn {\n  json: {\n    userId: jobData.userId,\n    applicationId: jobData.currentJob.applicationId,\n    jobId: jobData.currentJob.jobId,\n    company: jobData.currentJob.company,\n    position: jobData.currentJob.position,\n    contacts\n  }\n};"
+      },
+      "id": "create-contacts",
+      "name": "Create Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "contacts",
+        "returnAll": false,
+        "limit": 1000,
+        "options": {
+          "queryString": "=user_id=eq.{{ $json.userId }}"
+        }
+      },
+      "id": "check-dupes",
+      "name": "Check Duplicates",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1640, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIAL_ID}}",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const newContacts = $('Create Contacts').item.json.contacts;\nconst existing = $input.all().map(i => i.json);\n\nconst existingEmails = new Set(existing.map(c => c.email?.toLowerCase()).filter(Boolean));\nconst existingLinkedIn = new Set(existing.map(c => c.linkedin_url?.toLowerCase()).filter(Boolean));\n\nconst unique = newContacts.filter(c => {\n  if (c.email?.toLowerCase() && existingEmails.has(c.email.toLowerCase())) return false;\n  if (c.linkedin_url?.toLowerCase() && existingLinkedIn.has(c.linkedin_url.toLowerCase())) return false;\n  return true;\n});\n\nreturn {\n  json: {\n    userId: $('Create Contacts').item.json.userId,\n    applicationId: $('Create Contacts').item.json.applicationId,\n    jobId: $('Create Contacts').item.json.jobId,\n    company: $('Create Contacts').item.json.company,\n    position: $('Create Contacts').item.json.position,\n    contacts: unique,\n    totalFound: newContacts.length,\n    duplicatesRemoved: newContacts.length - unique.length,\n    uniqueCount: unique.length\n  }\n};"
+      },
+      "id": "remove-dupes",
+      "name": "Remove Duplicates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1840, 300]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Contact Finder Logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "User ID": "={{ $json.userId }}",
+            "Job": "={{ $json.position + ' at ' + $json.company }}",
+            "Application ID": "={{ $json.applicationId }}",
+            "Total": "={{ $json.totalFound }}",
+            "Unique": "={{ $json.uniqueCount }}",
+            "Dupes": "={{ $json.duplicatesRemoved }}",
+            "Names": "={{ $json.contacts.map(c => c.name).slice(0, 5).join(', ') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "log-sheets",
+      "name": "Log to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2040, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{GOOGLE_SHEETS_CREDENTIAL_ID}}",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "https://sivio.vercel.app/api/contacts/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-webhook-secret",
+              "value": "wh_sec_contact_finder_n8n_2025_prod_v1_secure_token_xK9mP3nQ7yR2vL8cF4jH6tS1wN5bG0d"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"user_id\": $json.userId, \"application_id\": $json.applicationId, \"contacts\": $json.contacts } }}",
+        "options": {}
+      },
+      "id": "push-sivio",
+      "name": "Push to Sivio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Respond Immediately", "type": "main", "index": 0}]]
+    },
+    "Respond Immediately": {
+      "main": [[{"node": "Extract & Split Jobs", "type": "main", "index": 0}]]
+    },
+    "Extract & Split Jobs": {
+      "main": [[{"node": "Apify - Scrape Employees", "type": "main", "index": 0}]]
+    },
+    "Apify - Scrape Employees": {
+      "main": [[{"node": "Filter & Score", "type": "main", "index": 0}]]
+    },
+    "Filter & Score": {
+      "main": [[{"node": "OpenAI Rank", "type": "main", "index": 0}]]
+    },
+    "OpenAI Rank": {
+      "main": [[{"node": "Create Contacts", "type": "main", "index": 0}]]
+    },
+    "Create Contacts": {
+      "main": [[{"node": "Check Duplicates", "type": "main", "index": 0}]]
+    },
+    "Check Duplicates": {
+      "main": [[{"node": "Remove Duplicates", "type": "main", "index": 0}]]
+    },
+    "Remove Duplicates": {
+      "main": [[{"node": "Log to Sheets", "type": "main", "index": 0}]]
+    },
+    "Log to Sheets": {
+      "main": [[{"node": "Push to Sivio", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-16T00:00:00.000Z",
+  "versionId": "6"
+}
