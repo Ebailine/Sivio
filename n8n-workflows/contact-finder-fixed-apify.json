@@ -38,10 +38,14 @@
     },
     {
       "parameters": {
-        "actor": "caprolok/linkedin-employees-scraper",
-        "waitForFinish": true,
-        "inputJson": "={{ JSON.stringify({\n  companyUrls: $json.companyUrls,\n  designation: $json.designation,\n  maxResultsPerCompany: $json.maxResultsPerCompany\n}) }}",
-        "options": {}
+        "resource": "actor",
+        "operation": "run",
+        "actorId": "caprolok/linkedin-employees-scraper",
+        "runOptions": {
+          "waitForFinish": true
+        },
+        "inputJson": "={\n  \"companyUrls\": {{ JSON.stringify($json.companyUrls) }},\n  \"designation\": {{ JSON.stringify($json.designation) }},\n  \"maxResultsPerCompany\": {{ $json.maxResultsPerCompany }}\n}",
+        "additionalFields": {}
       },
       "id": "apify-scrape",
       "name": "Apify - Scrape Employees",
