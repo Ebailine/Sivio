@@ -40,11 +40,7 @@
       "parameters": {
         "actor": "caprolok/linkedin-employees-scraper",
         "waitForFinish": true,
-        "input": {
-          "companyUrls": "={{ $json.companyUrls }}",
-          "designation": "={{ $json.designation }}",
-          "maxResultsPerCompany": "={{ $json.maxResultsPerCompany }}"
-        },
+        "inputJson": "={{ JSON.stringify({\n  companyUrls: $json.companyUrls,\n  designation: $json.designation,\n  maxResultsPerCompany: $json.maxResultsPerCompany\n}) }}",
         "options": {}
       },
       "id": "apify-scrape",
