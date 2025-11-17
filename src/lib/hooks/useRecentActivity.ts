@@ -34,7 +34,7 @@ export function useRecentActivity(userId: string) {
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
           .select('*, applications!inner(company_name, job_title)')
-          .eq('user_id', userId)
+          .eq('userId', userId)
           .order('created_at', { ascending: false })
           .limit(20);
 

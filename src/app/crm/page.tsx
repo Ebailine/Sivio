@@ -90,7 +90,7 @@ export default function DashboardPage() {
       const { data, error } = await supabase
         .from('contacts')
         .select('id, name, position, jobCompany, relevance_score, role_type')
-        .eq('user_id', supabaseUserId)
+        .eq('userId', supabaseUserId)
         .order('relevance_score', { ascending: false })
         .limit(5);
 
@@ -142,7 +142,7 @@ export default function DashboardPage() {
       const { data, error} = await supabase
         .from('contacts')
         .select('id, name, position, jobCompany')
-        .eq('user_id', supabaseUserId)
+        .eq('userId', supabaseUserId)
         .order('created_at', { ascending: false })
         .limit(50);
 

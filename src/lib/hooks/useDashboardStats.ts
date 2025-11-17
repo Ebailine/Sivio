@@ -50,7 +50,7 @@ export function useDashboardStats(userId: string) {
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
           .select('*')
-          .eq('user_id', userId);
+          .eq('userId', userId);
 
         if (contactsError) throw contactsError;
 

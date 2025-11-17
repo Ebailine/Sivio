@@ -78,7 +78,7 @@ export default async function DashboardPage() {
     const { count: contactsCount } = await supabase
       .from('contacts')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', supabaseUser.id)
+      .eq('userId', supabaseUser.id)
 
     // Calculate stats
     const totalApplications = applications?.length || 0
