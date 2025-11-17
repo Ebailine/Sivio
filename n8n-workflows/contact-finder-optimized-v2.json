@@ -1,0 +1,404 @@
+{
+  "name": "Contact Finder - Optimized v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "148eaa2e-ca0f-46be-b4f2-647e48c28da7",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "148eaa2e-ca0f-46be-b4f2-647e48c28da7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Contact finder started\", \"jobs\": $json.body.jobs.length } }}",
+        "options": {}
+      },
+      "id": "respond-immediately",
+      "name": "Respond Immediately",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract payload and prepare for processing\nconst payload = $input.item.json.body;\n\n// HR/recruiting keywords for Apify designation field\nconst hrDesignations = [\n  'HR',\n  'HR manager',\n  'recruiter',\n  'talent',\n  'talent acquisition',\n  'people operations',\n  'people partner',\n  'hiring manager',\n  'executive assistant'\n];\n\nreturn payload.jobs.map(job => {\n  // Extract company LinkedIn URL from job data\n  let companyLinkedInUrl = '';\n  \n  if (job.url && job.url.includes('linkedin.com/company/')) {\n    companyLinkedInUrl = job.url;\n  } else if (job.domain) {\n    const companySlug = job.domain.replace('.com', '').replace(/[^a-z0-9]/g, '-');\n    companyLinkedInUrl = `https://www.linkedin.com/company/${companySlug}`;\n  } else if (job.company) {\n    const companySlug = job.company.toLowerCase().replace(/[^a-z0-9]+/g, '-');\n    companyLinkedInUrl = `https://www.linkedin.com/company/${companySlug}`;\n  }\n  \n  return {\n    json: {\n      userId: payload.userId,\n      userEmail: payload.userEmail,\n      contactsPerJob: payload.contactsPerJob,\n      currentJob: job,\n      companyUrls: [companyLinkedInUrl],\n      designation: hrDesignations,\n      maxResultsPerCompany: 15\n    }\n  };\n});"
+      },
+      "id": "extract-and-split",
+      "name": "Extract & Split Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "9Qmr7CUJ3fVH6bAmC",
+          "mode": "list",
+          "cachedResultName": "Linkedin Employees Scraper (caprolok/linkedin-employees-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/9Qmr7CUJ3fVH6bAmC/input"
+        },
+        "customBody": "={\n  \"companyUrls\": {{ JSON.stringify($json.companyUrls) }},\n  \"designation\": {{ JSON.stringify($json.designation) }},\n  \"maxResultsPerCompany\": {{ $json.maxResultsPerCompany }}\n}",
+        "timeout": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [840, 300],
+      "id": "apify-scrape",
+      "name": "Apify - Scrape Employees",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "{{APIFY_CREDENTIAL_ID}}",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all Apify results into one item with job context\nconst apifyResults = $input.all();\nconst jobData = $('Extract & Split Jobs').item.json;\n\n// Extract all contacts from Apify and filter spam immediately\nconst allContacts = apifyResults\n  .map(item => ({\n    name: item.json.name || 'Unknown',\n    firstName: item.json.first_name,\n    lastName: item.json.last_name,\n    position: item.json.designation || item.json.company || '',\n    location: item.json.location || '',\n    linkedinUrl: item.json.link || '',\n    company: item.json.company || jobData.currentJob.company\n  }))\n  .filter(c => {\n    // Filter out Apify spam early\n    const name = c.name.toLowerCase();\n    return !name.includes('free user') && \n           !name.includes('upgrade to paid') &&\n           !name.includes('linkedin member') &&\n           c.name !== 'Unknown';\n  });\n\nconsole.log(`Apify returned ${apifyResults.length} contacts, filtered to ${allContacts.length} valid contacts`);\n\n// Return ONE item with job context + all valid contacts\nreturn [{\n  json: {\n    userId: jobData.userId,\n    userEmail: jobData.userEmail,\n    applicationId: jobData.currentJob.applicationId,\n    jobId: jobData.currentJob.jobId,\n    company: jobData.currentJob.company,\n    position: jobData.currentJob.position,\n    location: jobData.currentJob.location,\n    description: jobData.currentJob.description,\n    contactsPerJob: jobData.contactsPerJob,\n    contacts: allContacts\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 300],
+      "id": "aggregate-contacts",
+      "name": "Aggregate Contacts"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a career advisor helping job seekers find the best contacts for outreach.\n\nJOB DETAILS:\nPosition: {{ $json.position }}\nCompany: {{ $json.company }}\nLocation: {{ $json.location }}\n\nJOB DESCRIPTION (first 800 chars):\n{{ $json.description.substring(0, 800) }}\n\nCONTACTS TO RANK:\n{{ JSON.stringify($json.contacts.map((c, i) => ({\n  id: i,\n  name: c.name,\n  position: c.position,\n  location: c.location\n})), null, 2) }}\n\nRANKING CRITERIA (strict priority order):\n1. HR/Recruiting roles = 95-100 points\n   - Keywords: recruiter, talent acquisition, talent partner, HR, human resources, people operations, hiring manager, staffing, sourcer\n   - These contacts should ALWAYS rank at the top\n\n2. Senior leadership with hiring authority = 80-90 points\n   - VP, SVP, Director, Head of Department, C-level\n   - Especially if in relevant department\n\n3. Managers in relevant department = 65-75 points\n   - Manager, Senior Manager, Team Lead\n   - Must match job description keywords\n\n4. Team members in similar roles = 50-60 points\n   - Individual contributors with job titles matching position\n\n5. Location bonus: +5 points if location matches job location\n\nIMPORTANT RULES:\n- HR/recruiting contacts MUST be ranked first (95-100 scores)\n- Be strict: don't give high scores to irrelevant contacts\n- Consider job description keywords when ranking team members\n- If position title is vague, score lower\n\nReturn ONLY a valid JSON array (no markdown, no code blocks, no explanation):\n[{\"id\": 0, \"score\": 98, \"reasoning\": \"Senior Talent Acquisition Manager - perfect HR contact for initial outreach\"}]\n\nRank ALL {{ $json.contacts.length }} contacts from highest to lowest score."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "openai-rank",
+      "name": "OpenAI Rank",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [1240, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "{{OPENAI_CREDENTIAL_ID}}",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create final contacts from OpenAI ranking\nconst aiData = $input.item.json;\nconst aiContent = aiData.message?.content || aiData.choices?.[0]?.message?.content || '';\nconst jobData = $('Aggregate Contacts').item.json;\n\nlet ranked = [];\ntry {\n  // Try to extract JSON from response\n  const jsonMatch = aiContent.match(/\\[.*\\]/s);\n  if (jsonMatch) {\n    ranked = JSON.parse(jsonMatch[0]);\n  } else {\n    // If no JSON found, try parsing entire content\n    ranked = JSON.parse(aiContent);\n  }\n} catch (e) {\n  console.error('Failed to parse OpenAI response:', e);\n  console.log('AI Content:', aiContent);\n  // Fallback: create basic ranking based on order\n  ranked = jobData.contacts.map((c, i) => ({ \n    id: i, \n    score: 60 - i, \n    reasoning: 'AI ranking failed - using default order' \n  }));\n}\n\nconsole.log(`OpenAI ranked ${ranked.length} contacts`);\n\n// Map ranked IDs to actual contact data\nconst contacts = ranked\n  .map(r => {\n    const contact = jobData.contacts[r.id];\n    if (!contact) return null;\n\n    return {\n      name: contact.name || 'Unknown',\n      position: contact.position || '',\n      email: null, // Apify doesn't provide emails\n      company: contact.company || jobData.company,\n      location: contact.location || '',\n      linkedin_url: contact.linkedinUrl || null,\n      verified: false,\n      relevance_score: r.score || 50,\n      reasoning: r.reasoning || 'No reasoning provided',\n      source: 'linkedin_apify',\n      role_type: (contact.position || '').toLowerCase().includes('recruit') || \n                 (contact.position || '').toLowerCase().includes('hr') || \n                 (contact.position || '').toLowerCase().includes('talent') ? 'hr' : 'other'\n    };\n  })\n  .filter(Boolean);\n\nconsole.log(`Created ${contacts.length} final contacts`);\n\nreturn {\n  json: {\n    userId: jobData.userId,\n    applicationId: jobData.applicationId,\n    jobId: jobData.jobId,\n    company: jobData.company,\n    position: jobData.position,\n    location: jobData.location,\n    contacts\n  }\n};"
+      },
+      "id": "create-contacts",
+      "name": "Create Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "contacts",
+        "returnAll": false,
+        "limit": 1000,
+        "options": {
+          "queryString": "=user_id=eq.{{ $('Create Contacts').item.json.userId }}"
+        }
+      },
+      "id": "check-duplicates",
+      "name": "Check Duplicates",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1640, 460],
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIAL_ID}}",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "merge-node",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1840, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Merge node - handles both Create Contacts and Check Duplicates\nconst allInputs = $input.all();\n\n// Separate new contacts from existing Supabase contacts\nlet newContactsData = null;\nlet existingContacts = [];\n\n// Find the item that has the 'contacts' array (from Create Contacts)\n// and separate items from Supabase (they have individual contact fields)\nfor (const item of allInputs) {\n  if (item.json.contacts && Array.isArray(item.json.contacts)) {\n    // This is from Create Contacts node\n    newContactsData = item.json;\n  } else if (item.json.linkedin_url) {\n    // This is an individual contact from Supabase\n    existingContacts.push(item.json);\n  }\n}\n\nif (!newContactsData) {\n  throw new Error('No new contacts data found from Create Contacts node');\n}\n\nconst newContacts = newContactsData.contacts;\n\nconsole.log(`New contacts: ${newContacts.length}`);\nconsole.log(`Existing contacts in Supabase: ${existingContacts.length}`);\n\n// Create sets for duplicate checking\nconst existingEmails = new Set(\n  existingContacts.map(c => c.email?.toLowerCase()).filter(Boolean)\n);\nconst existingLinkedIn = new Set(\n  existingContacts.map(c => c.linkedin_url?.toLowerCase()).filter(Boolean)\n);\n\n// Filter out duplicates\nconst unique = newContacts.filter(c => {\n  if (c.email?.toLowerCase() && existingEmails.has(c.email.toLowerCase())) {\n    return false;\n  }\n  if (c.linkedin_url?.toLowerCase() && existingLinkedIn.has(c.linkedin_url.toLowerCase())) {\n    return false;\n  }\n  return true;\n});\n\nconsole.log(`✅ Unique contacts to add: ${unique.length}`);\nconsole.log(`⏭️  Duplicates skipped: ${newContacts.length - unique.length}`);\n\nreturn {\n  json: {\n    userId: newContactsData.userId,\n    applicationId: newContactsData.applicationId,\n    jobId: newContactsData.jobId,\n    company: newContactsData.company,\n    position: newContactsData.position,\n    location: newContactsData.location,\n    contacts: unique,\n    totalFound: newContacts.length,\n    duplicatesRemoved: newContacts.length - unique.length,\n    uniqueCount: unique.length\n  }\n};"
+      },
+      "id": "remove-duplicates",
+      "name": "Remove Duplicates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2040, 300]
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Sheet1"
+        }
+      },
+      "id": "clear-google-sheet",
+      "name": "Clear Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2240, 140],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{GOOGLE_SHEETS_CREDENTIAL_ID}}",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "contacts",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "applicationId, company, position, location, userId"
+      },
+      "id": "split-out-contacts",
+      "name": "Split Out Contacts",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten the nested contact structure for ALL items\nconst items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json;\n  const contact = data.contacts || {};\n  \n  return {\n    json: {\n      // Contact fields from nested object\n      name: contact.name || 'Unknown',\n      position: contact.position || '',\n      email: contact.email || null,\n      linkedin_url: contact.linkedin_url || null,\n      verified: contact.verified || false,\n      relevance_score: contact.relevance_score || 0,\n      reasoning: contact.reasoning || '',\n      source: contact.source || 'linkedin_apify',\n      role_type: contact.role_type || 'other',\n      \n      // Top-level fields from Split Out\n      applicationId: data.applicationId,\n      userId: data.userId,\n      \n      // Job info (use top-level company, position, location)\n      jobCompany: data.company,\n      jobPosition: data.position,\n      jobLocation: data.location,\n      \n      // Contact location (from LinkedIn profile)\n      contactLocation: contact.location || '',\n      \n      // For display\n      jobAppliedFor: `${data.position} at ${data.company}`\n    }\n  };\n});"
+      },
+      "id": "flatten-contact-data",
+      "name": "Flatten Contact Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Contact Name": "={{ $json.name }}",
+            "Position": "={{ $json.position }}",
+            "Job Location": "={{ $json.jobLocation }}",
+            "LinkedIn URL": "={{ $json.linkedin_url }}",
+            "Relevance Score": "={{ $json.relevance_score }}",
+            "AI Reasoning": "={{ $json.reasoning }}",
+            "Role Type": "={{ $json.role_type }}",
+            "Job Applied For": "={{ $json.jobAppliedFor }}",
+            "Application ID": "={{ $json.applicationId }}",
+            "Company": "={{ $json.jobCompany }}",
+            "Job Position": "={{ $json.jobPosition }}",
+            "Contact Location": "={{ $json.contactLocation }}",
+            "User ID": "={{ $json.userId }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "log-contacts-to-sheets",
+      "name": "Log Contacts to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2840, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{GOOGLE_SHEETS_CREDENTIAL_ID}}",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "position",
+              "fieldValue": "={{ $json.position }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "linkedin_url",
+              "fieldValue": "={{ $json.linkedin_url }}"
+            },
+            {
+              "fieldId": "verified",
+              "fieldValue": "={{ $json.verified }}"
+            },
+            {
+              "fieldId": "relevance_score",
+              "fieldValue": "={{ Math.round($json.relevance_score) }}"
+            },
+            {
+              "fieldId": "reasoning",
+              "fieldValue": "={{ $json.reasoning }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "role_type",
+              "fieldValue": "={{ $json.role_type }}"
+            },
+            {
+              "fieldId": "applicationId",
+              "fieldValue": "={{ $json.applicationId }}"
+            },
+            {
+              "fieldId": "userId",
+              "fieldValue": "={{ $json.userId }}"
+            },
+            {
+              "fieldId": "jobCompany",
+              "fieldValue": "={{ $json.jobCompany }}"
+            },
+            {
+              "fieldId": "jobPosition",
+              "fieldValue": "={{ $json.jobPosition }}"
+            },
+            {
+              "fieldId": "jobLocation",
+              "fieldValue": "={{ $json.jobLocation }}"
+            },
+            {
+              "fieldId": "contactLocation",
+              "fieldValue": "={{ $json.contactLocation }}"
+            },
+            {
+              "fieldId": "jobAppliedFor",
+              "fieldValue": "={{ $json.jobAppliedFor }}"
+            }
+          ]
+        }
+      },
+      "id": "push-to-supabase",
+      "name": "Push to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3040, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIAL_ID}}",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Respond Immediately", "type": "main", "index": 0}]]
+    },
+    "Respond Immediately": {
+      "main": [[{"node": "Extract & Split Jobs", "type": "main", "index": 0}]]
+    },
+    "Extract & Split Jobs": {
+      "main": [[{"node": "Apify - Scrape Employees", "type": "main", "index": 0}]]
+    },
+    "Apify - Scrape Employees": {
+      "main": [[{"node": "Aggregate Contacts", "type": "main", "index": 0}]]
+    },
+    "Aggregate Contacts": {
+      "main": [[{"node": "OpenAI Rank", "type": "main", "index": 0}]]
+    },
+    "OpenAI Rank": {
+      "main": [[{"node": "Create Contacts", "type": "main", "index": 0}]]
+    },
+    "Create Contacts": {
+      "main": [[
+        {"node": "Check Duplicates", "type": "main", "index": 0},
+        {"node": "Merge", "type": "main", "index": 1}
+      ]]
+    },
+    "Check Duplicates": {
+      "main": [[{"node": "Merge", "type": "main", "index": 0}]]
+    },
+    "Merge": {
+      "main": [[{"node": "Remove Duplicates", "type": "main", "index": 0}]]
+    },
+    "Remove Duplicates": {
+      "main": [[
+        {"node": "Clear Google Sheet", "type": "main", "index": 0},
+        {"node": "Split Out Contacts", "type": "main", "index": 0}
+      ]]
+    },
+    "Clear Google Sheet": {
+      "main": [[]]
+    },
+    "Split Out Contacts": {
+      "main": [[
+        {"node": "Flatten Contact Data", "type": "main", "index": 0}
+      ]]
+    },
+    "Flatten Contact Data": {
+      "main": [[
+        {"node": "Log Contacts to Sheets", "type": "main", "index": 0},
+        {"node": "Push to Supabase", "type": "main", "index": 0}
+      ]]
+    },
+    "Log Contacts to Sheets": {
+      "main": [[]]
+    },
+    "Push to Supabase": {
+      "main": [[]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-16T00:00:00.000Z",
+  "versionId": "optimized-v2-final"
+}
