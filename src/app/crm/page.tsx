@@ -41,9 +41,10 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [contacts, setContacts] = useState<Array<{ id: string; name: string; position: string; company?: string }>>([]);
 
-  // Use custom hooks for dashboard data
-  const { stats, isLoading: statsLoading, error: statsError } = useDashboardStats(user?.id || '');
-  const { activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivity(user?.id || '');
+  // Use custom hooks for dashboard data (only when user is loaded)
+  const userId = (isLoaded && user?.id) ? user.id : '';
+  const { stats, isLoading: statsLoading, error: statsError } = useDashboardStats(userId);
+  const { activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivity(userId);
 
   useEffect(() => {
     if (!isLoaded) return;

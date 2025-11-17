@@ -103,8 +103,10 @@ export function useDashboardStats(userId: string) {
   };
 
   useEffect(() => {
-    if (userId) {
+    if (userId && userId.length > 0) {
       fetchStats();
+    } else {
+      setIsLoading(false);
     }
   }, [userId]);
 

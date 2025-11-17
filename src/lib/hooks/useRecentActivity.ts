@@ -89,8 +89,10 @@ export function useRecentActivity(userId: string) {
       }
     }
 
-    if (userId) {
+    if (userId && userId.length > 0) {
       fetchActivities();
+    } else {
+      setIsLoading(false);
     }
   }, [userId]);
 
