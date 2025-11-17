@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import MainNav from '@/components/MainNav';
 import { ErrorBoundary } from '@/components/crm/shared/ErrorBoundary';
 import { LoadingDashboard } from '@/components/crm/shared/LoadingState';
 import { ToastNotifications } from '@/components/crm/shared/ToastNotifications';
@@ -164,6 +165,7 @@ export default function DashboardPage() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
+        <MainNav />
         <ToastNotifications />
 
         {/* Page Header */}
