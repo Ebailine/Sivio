@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // 2. Parse request body
     const body = await request.json()
-    const { applicationIds, contactsPerJob } = body
+    const { applicationIds } = body
 
     // 3. Validate input
     if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
@@ -34,12 +34,8 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!contactsPerJob || contactsPerJob < 1 || contactsPerJob > 10) {
-      return NextResponse.json(
-        { error: 'contactsPerJob must be between 1 and 10' },
-        { status: 400 }
-      )
-    }
+    // Fixed: 5 credits per application (industry standard for contact finding)
+    const creditsPerApplication = 5
 
     const supabase = createAdminClient()
 
@@ -59,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Calculate total credit cost
-    const totalCreditCost = applicationIds.length * contactsPerJob
+    const totalCreditCost = applicationIds.length * creditsPerApplication
 
     // 6. Check if user has enough credits
     if (user.credits < totalCreditCost) {
@@ -112,7 +108,6 @@ export async function POST(request: Request) {
     const n8nPayload = {
       userId: user.id,
       userEmail: user.email,
-      contactsPerJob,
       jobs: applications.map(app => {
         const jobData = jobsMap.get(app.job_id)
 
@@ -160,7 +155,7 @@ export async function POST(request: Request) {
     console.log('📤 Triggering n8n webhook with payload:', {
       userId: n8nPayload.userId,
       jobCount: n8nPayload.jobs.length,
-      contactsPerJob: n8nPayload.contactsPerJob,
+      creditsPerJob: creditsPerApplication,
       totalCredits: totalCreditCost
     })
 
@@ -204,12 +199,12 @@ export async function POST(request: Request) {
         amount: -totalCreditCost,
         type: 'contact_finder',
         status: 'pending',
-        description: `Contact finder for ${applications.length} job${applications.length > 1 ? 's' : ''} (${contactsPerJob} contacts each)`,
+        description: `Contact finder for ${applications.length} job${applications.length > 1 ? 's' : ''} (${creditsPerApplication} credits each)`,
         metadata: {
           applicationIds,
-          contactsPerJob,
+          creditsPerApplication,
           jobCount: applications.length,
-          totalContacts: totalCreditCost,
+          totalCredits: totalCreditCost,
           timestamp: new Date().toISOString()
         }
       })
@@ -235,8 +230,7 @@ export async function POST(request: Request) {
       success: true,
       message: `Contact finder started for ${applications.length} job${applications.length > 1 ? 's' : ''}`,
       jobsProcessing: applications.length,
-      contactsPerJob,
-      totalContacts: totalCreditCost,
+      creditsPerApplication,
       creditsDeducted: totalCreditCost,
       creditsRemaining: user.credits - totalCreditCost,
       estimatedTime: `${Math.ceil(applications.length * 2)}-${Math.ceil(applications.length * 3)} minutes`,

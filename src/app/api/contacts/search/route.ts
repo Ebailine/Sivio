@@ -1,6 +1,9 @@
 /**
  * AI-Powered Contact Search API
  * Uses Claude AI to minimize Snov.io credit usage while maximizing contact quality
+ *
+ * GET: Fetch all contacts for the authenticated user
+ * POST: Find new contacts for a job posting
  */
 
 import { NextResponse } from 'next/server'
@@ -15,6 +18,60 @@ import { companyResearcher } from '@/lib/services/company-researcher'
 import { linkedInContactFinder } from '@/lib/services/linkedin-contact-finder'
 import { creditTracker } from '@/lib/services/credit-tracker'
 import { emailPatternGenerator } from '@/lib/services/email-pattern-generator'
+
+// GET /api/contacts/search - Fetch all contacts for the user
+export async function GET(request: Request) {
+  try {
+    const { userId } = await auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+
+    // Get user from Supabase
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('clerk_id', userId)
+      .single()
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Fetch all contacts for this user
+    const { data: contacts, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Failed to fetch contacts:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch contacts' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      contacts: contacts || []
+    })
+
+  } catch (error: any) {
+    console.error('Get contacts error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 const CREDIT_COST_PER_CONTACT = 1
 const CREDIT_COST_PER_EMAIL_VALIDATION = 1
