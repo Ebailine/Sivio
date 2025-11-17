@@ -163,12 +163,16 @@ export async function POST(request: Request) {
     const n8nWebhookUrl = process.env.N8N_CONTACT_FINDER_WEBHOOK_URL
 
     if (!n8nWebhookUrl) {
-      console.error('N8N_CONTACT_FINDER_WEBHOOK_URL not configured')
+      console.error('❌ N8N_CONTACT_FINDER_WEBHOOK_URL not configured')
+      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('N8N')))
       return NextResponse.json(
         { error: 'Contact finder service not configured. Please contact support.' },
         { status: 500 }
       )
     }
+
+    console.log('🌐 Calling n8n webhook:', n8nWebhookUrl.substring(0, 50) + '...')
+    console.log('📦 Payload jobs:', n8nPayload.jobs.map(j => ({ company: j.company, position: j.position })))
 
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: 'POST',
@@ -178,8 +182,10 @@ export async function POST(request: Request) {
       body: JSON.stringify(n8nPayload)
     })
 
+    console.log('📡 n8n response status:', n8nResponse.status, n8nResponse.statusText)
+
     if (!n8nResponse.ok) {
-      console.error('n8n webhook failed:', n8nResponse.status, n8nResponse.statusText)
+      console.error('❌ n8n webhook failed:', n8nResponse.status, n8nResponse.statusText)
       const errorText = await n8nResponse.text()
       console.error('n8n error response:', errorText)
 
@@ -189,7 +195,8 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('✅ n8n webhook triggered successfully')
+    const n8nResponseData = await n8nResponse.json()
+    console.log('✅ n8n webhook triggered successfully:', n8nResponseData)
 
     // 12. Reserve credits (create pending transaction)
     const { error: transactionError } = await supabase
