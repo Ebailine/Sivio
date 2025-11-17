@@ -38,14 +38,14 @@ export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
+  const [supabaseUserId, setSupabaseUserId] = useState<string>('');
   const [topContacts, setTopContacts] = useState<Contact[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [contacts, setContacts] = useState<Array<{ id: string; name: string; position: string; company?: string }>>([]);
 
-  // Use custom hooks for dashboard data (only when user is loaded)
-  const userId = (isLoaded && user?.id) ? user.id : '';
-  const { stats, isLoading: statsLoading, error: statsError } = useDashboardStats(userId);
-  const { activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivity(userId);
+  // Use custom hooks for dashboard data (only when supabase user ID is loaded)
+  const { stats, isLoading: statsLoading, error: statsError } = useDashboardStats(supabaseUserId);
+  const { activities, isLoading: activitiesLoading, error: activitiesError } = useRecentActivity(supabaseUserId);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -54,18 +54,43 @@ export default function DashboardPage() {
       return;
     }
 
-    fetchTopContacts();
-    fetchApplicationsForSearch();
-    fetchContactsForSearch();
+    fetchSupabaseUserId();
   }, [isLoaded, isSignedIn, router, user]);
 
+  useEffect(() => {
+    if (supabaseUserId) {
+      fetchTopContacts();
+      fetchApplicationsForSearch();
+      fetchContactsForSearch();
+    }
+  }, [supabaseUserId]);
+
+  const fetchSupabaseUserId = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('clerk_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setSupabaseUserId(data.id);
+      }
+    } catch (error) {
+      console.error('Error fetching Supabase user ID:', error);
+    }
+  };
+
   const fetchTopContacts = async () => {
+    if (!supabaseUserId) return;
     try {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('contacts')
         .select('id, name, position, jobCompany, relevance_score, role_type')
-        .eq('userId', user?.id)
+        .eq('user_id', supabaseUserId)
         .order('relevance_score', { ascending: false })
         .limit(5);
 
@@ -87,12 +112,13 @@ export default function DashboardPage() {
   };
 
   const fetchApplicationsForSearch = async () => {
+    if (!supabaseUserId) return;
     try {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('applications')
         .select('id, company_name, job_title, location')
-        .eq('user_id', user?.id)
+        .eq('user_id', supabaseUserId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -110,12 +136,13 @@ export default function DashboardPage() {
   };
 
   const fetchContactsForSearch = async () => {
+    if (!supabaseUserId) return;
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('contacts')
         .select('id, name, position, jobCompany')
-        .eq('userId', user?.id)
+        .eq('user_id', supabaseUserId)
         .order('created_at', { ascending: false })
         .limit(50);
 

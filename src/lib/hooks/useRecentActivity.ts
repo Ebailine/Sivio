@@ -11,6 +11,11 @@ export function useRecentActivity(userId: string) {
 
   useEffect(() => {
     async function fetchActivities() {
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         const supabase = createClient();
@@ -29,7 +34,7 @@ export function useRecentActivity(userId: string) {
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
           .select('*, applications!inner(company_name, job_title)')
-          .eq('userId', userId)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(20);
 
@@ -53,7 +58,7 @@ export function useRecentActivity(userId: string) {
 
         // Add contacts found events (group by application)
         const contactsByApp = contacts?.reduce((acc: any, contact: any) => {
-          const appId = contact.applicationId;
+          const appId = contact.application_id;
           if (!acc[appId]) {
             acc[appId] = {
               contacts: [],

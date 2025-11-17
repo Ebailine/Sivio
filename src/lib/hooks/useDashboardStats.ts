@@ -29,6 +29,11 @@ export function useDashboardStats(userId: string) {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchStats = async () => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const supabase = createClient();
@@ -45,7 +50,7 @@ export function useDashboardStats(userId: string) {
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
           .select('*')
-          .eq('userId', userId);
+          .eq('user_id', userId);
 
         if (contactsError) throw contactsError;
 
