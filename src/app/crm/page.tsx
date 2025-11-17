@@ -67,15 +67,16 @@ export default function DashboardPage() {
 
   const fetchSupabaseUserId = async () => {
     try {
-      const response = await fetch('/api/user/me');
-      const data = await response.json();
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('clerk_id', user?.id)
+        .single();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch user');
-      }
-
-      if (data.user) {
-        setSupabaseUserId(data.user.id);
+      if (error) throw error;
+      if (data) {
+        setSupabaseUserId(data.id);
       }
     } catch (error) {
       console.error('Error fetching Supabase user ID:', error);
