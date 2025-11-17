@@ -37,7 +37,7 @@ export function useDashboardStats(userId: string) {
         const { data: applications, error: appsError } = await supabase
           .from('applications')
           .select('*')
-          .eq('userid', userId);
+          .eq('user_id', userId);
 
         if (appsError) throw appsError;
 
@@ -45,7 +45,7 @@ export function useDashboardStats(userId: string) {
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
           .select('*')
-          .eq('userid', userId);
+          .eq('userId', userId);
 
         if (contactsError) throw contactsError;
 
@@ -72,11 +72,11 @@ export function useDashboardStats(userId: string) {
 
         // Calculate avg relevance score
         const avgRelevanceScore = contacts && contacts.length > 0
-          ? Math.round(contacts.reduce((sum, c) => sum + (c.relevancescore || 0), 0) / contacts.length)
+          ? Math.round(contacts.reduce((sum, c) => sum + (c.relevance_score || 0), 0) / contacts.length)
           : 0;
 
         // Calculate HR contacts count
-        const hrContacts = contacts?.filter(c => c.roletype === 'hr').length || 0;
+        const hrContacts = contacts?.filter(c => c.role_type === 'hr').length || 0;
 
         // For now, set changes to 0 (would need historical data)
         const applicationsChange = 0;

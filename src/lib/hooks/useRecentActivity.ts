@@ -19,8 +19,8 @@ export function useRecentActivity(userId: string) {
         const { data: applications, error: appsError } = await supabase
           .from('applications')
           .select('*')
-          .eq('userid', userId)
-          .order('createdat', { ascending: false })
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
           .limit(20);
 
         if (appsError) throw appsError;
@@ -28,9 +28,9 @@ export function useRecentActivity(userId: string) {
         // Fetch contacts with their created timestamps
         const { data: contacts, error: contactsError } = await supabase
           .from('contacts')
-          .select('*, applications!inner(company, position)')
-          .eq('userid', userId)
-          .order('createdat', { ascending: false })
+          .select('*, applications!inner(company_name, job_title)')
+          .eq('userId', userId)
+          .order('created_at', { ascending: false })
           .limit(20);
 
         if (contactsError) throw contactsError;
@@ -39,25 +39,25 @@ export function useRecentActivity(userId: string) {
 
         // Add application created events
         applications?.forEach(app => {
-          if (app.createdat) {
+          if (app.created_at) {
             activityList.push({
               id: `app-created-${app.id}`,
               type: 'application_created',
               description: 'Application created',
-              timestamp: new Date(app.createdat),
+              timestamp: new Date(app.created_at),
               applicationId: app.id,
-              applicationTitle: `${app.company} - ${app.position}`,
+              applicationTitle: `${app.company_name} - ${app.job_title}`,
             });
           }
         });
 
         // Add contacts found events (group by application)
         const contactsByApp = contacts?.reduce((acc: any, contact: any) => {
-          const appId = contact.applicationid;
+          const appId = contact.applicationId;
           if (!acc[appId]) {
             acc[appId] = {
               contacts: [],
-              timestamp: contact.createdat,
+              timestamp: contact.created_at,
               application: contact.applications,
             };
           }
@@ -72,7 +72,7 @@ export function useRecentActivity(userId: string) {
             description: `${data.contacts.length} contacts found`,
             timestamp: new Date(data.timestamp),
             applicationId: appId,
-            applicationTitle: `${data.application?.company} - ${data.application?.position}`,
+            applicationTitle: `${data.application?.company_name} - ${data.application?.job_title}`,
             metadata: {
               count: data.contacts.length,
             },

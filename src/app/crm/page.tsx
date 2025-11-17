@@ -64,9 +64,9 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, position, company, relevancescore, roletype')
-        .eq('userid', user?.id)
-        .order('relevancescore', { ascending: false })
+        .select('id, name, position, jobCompany, relevance_score, role_type')
+        .eq('userId', user?.id)
+        .order('relevance_score', { ascending: false })
         .limit(5);
 
       if (error) throw error;
@@ -75,9 +75,9 @@ export default function DashboardPage() {
         id: c.id,
         name: c.name,
         position: c.position,
-        company: c.company,
-        relevanceScore: c.relevancescore || 0,
-        roleType: c.roletype || 'other',
+        company: c.jobCompany,
+        relevanceScore: c.relevance_score || 0,
+        roleType: c.role_type || 'other',
       }));
 
       setTopContacts(formattedContacts);
@@ -91,17 +91,17 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('applications')
-        .select('id, company, position, location')
-        .eq('userid', user?.id)
-        .order('createdat', { ascending: false })
+        .select('id, company_name, job_title, location')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
 
       setApplications((data || []).map(app => ({
         id: app.id,
-        company: app.company,
-        position: app.position,
+        company: app.company_name,
+        position: app.job_title,
         location: app.location,
       })));
     } catch (error) {
@@ -114,9 +114,9 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name, position, company')
-        .eq('userid', user?.id)
-        .order('createdat', { ascending: false })
+        .select('id, name, position, jobCompany')
+        .eq('userId', user?.id)
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         id: c.id,
         name: c.name,
         position: c.position,
-        company: c.company,
+        company: c.jobCompany,
       })));
     } catch (error) {
       console.error('Error fetching contacts for search:', error);
