@@ -9,11 +9,14 @@ export function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Skip password protection for API routes, webhooks, static files, and login page
+  // Skip password protection for API routes, webhooks, static files, login page, and Clerk-protected routes
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/site-login') ||
+    pathname.startsWith('/sign-in') ||
+    pathname.startsWith('/sign-up') ||
+    pathname.startsWith('/dashboard') || // Old dashboard has Clerk auth
     pathname.startsWith('/favicon.ico') ||
     pathname.includes('.') // static files
   ) {
