@@ -48,7 +48,8 @@ export default function ContactsPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/contacts/search');
+      // Simple GET request to fetch all user's contacts
+      const response = await fetch('/api/contacts/all');
 
       if (!response.ok) {
         throw new Error('Failed to fetch contacts');
