@@ -7,43 +7,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Skip password protection for API routes, webhooks, and static files
   const pathname = request.nextUrl.pathname
+
+  // Skip password protection for API routes, webhooks, static files, and login page
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
+    pathname.startsWith('/site-login') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.includes('.') // static files
   ) {
     return NextResponse.next()
   }
 
-  // Check for authentication
-  const authHeader = request.headers.get('authorization')
+  // Check for authentication cookie
+  const authCookie = request.cookies.get('site-auth')
 
-  if (!authHeader) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="SIVIO Access"',
-      },
-    })
-  }
-
-  // Parse Basic auth header
-  const auth = authHeader.split(' ')[1]
-  const [user, password] = Buffer.from(auth, 'base64').toString().split(':')
-
-  // Check credentials (username: admin, password from env variable)
-  const validPassword = process.env.SITE_PASSWORD || 'sivio2025'
-
-  if (user !== 'admin' || password !== validPassword) {
-    return new NextResponse('Invalid credentials', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="SIVIO Access"',
-      },
-    })
+  if (!authCookie || authCookie.value !== 'authenticated') {
+    // Redirect to login page
+    const loginUrl = new URL('/site-login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Authentication successful
