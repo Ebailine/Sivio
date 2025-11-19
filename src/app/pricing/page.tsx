@@ -56,8 +56,8 @@ export default function PricingPage() {
     },
     {
       name: 'Pro',
-      monthlyPrice: 29,
-      annualPrice: 24, // $24/mo when billed annually ($288/year)
+      monthlyPrice: 39,
+      annualPrice: 31, // $31/mo when billed annually ($372/year) - 20% off
       description: 'For serious job seekers',
       icon: <Zap className="w-8 h-8 text-blue-600" />,
       features: [
@@ -142,7 +142,7 @@ export default function PricingPage() {
     },
     {
       question: 'How does the annual discount work?',
-      answer: 'Annual plans save you 20% compared to monthly billing. For example, Pro costs $29/month or $288/year ($24/month), saving you $60 annually.',
+      answer: 'Annual plans save you 20% compared to monthly billing. For example, Pro costs $39/month or $372/year ($31/month), saving you $96 annually.',
     },
     {
       question: 'Can I get a custom plan?',
@@ -170,13 +170,20 @@ export default function PricingPage() {
 
           <ScrollReveal delay={100}>
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
-              Choose Your <span className="text-gradient-animate">Perfect Plan</span>
+              Invest $39/Month,
+              <br />
+              <span className="text-yellow-300">Earn $1.2M More</span>
+              <br />
+              <span className="text-4xl sm:text-5xl">Over Your Lifetime</span>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
-            <p className="text-xl sm:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Start free, scale as you grow. No hidden fees, no surprises. Cancel anytime.
+            <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
+              Avoiding underemployment pays off for decades. Start strong, earn millions more.
+            </p>
+            <p className="text-sm text-blue-200 mb-12 max-w-2xl mx-auto">
+              Source: Federal Reserve Bank of St. Louis (2022) - Lifetime earnings difference between strong career starts vs. underemployment
             </p>
           </ScrollReveal>
 

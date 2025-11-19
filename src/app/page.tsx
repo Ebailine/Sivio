@@ -41,44 +41,44 @@ export default function Home() {
     {
       icon: <Target className="w-10 h-10 text-blue-600" />,
       title: 'AI Job Matching',
-      description: 'Our AI analyzes your profile and finds perfect-fit internships from 50,000+ live listings.',
-      benefit: 'Save 10+ hrs/week',
+      description: 'Skip the 40-60 applications most students waste. Our AI finds perfect-fit internships from 50,000+ live listings tailored to your profile.',
+      benefit: 'Save 80+ hrs/month',
       color: 'blue'
     },
     {
       icon: <Zap className="w-10 h-10 text-purple-600" />,
       title: 'Auto-Apply',
-      description: 'Automatically apply to hundreds of relevant positions with custom cover letters.',
+      description: 'Apply to hundreds of relevant positions automatically with AI-customized cover letters. Cut your 6-month job search down to weeks.',
       benefit: '500+ apps/month',
       color: 'purple'
     },
     {
       icon: <Mail className="w-10 h-10 text-green-600" />,
       title: 'Contact Finder',
-      description: 'Find verified email addresses of recruiters and hiring managers at target companies.',
+      description: 'Skip the 2% response rate black hole. Find verified emails of hiring managers since 85% of jobs are filled through networking.',
       benefit: '95% accuracy',
       color: 'green'
     },
     {
       icon: <Brain className="w-10 h-10 text-pink-600" />,
       title: 'Smart Outreach',
-      description: 'AI-generated personalized emails that actually get responses from recruiters.',
+      description: 'Personalized emails proven to get 3x higher response rates than generic applications. Reach decision-makers directly.',
       benefit: '3x response rate',
       color: 'pink'
     },
     {
       icon: <BarChart3 className="w-10 h-10 text-orange-600" />,
       title: 'CRM Dashboard',
-      description: 'Track every application, contact, and conversation in one beautiful dashboard.',
+      description: 'Track every application, contact, and conversation in one place. Never lose track of opportunities or follow-ups again.',
       benefit: 'Full visibility',
       color: 'orange'
     },
     {
-      icon: <Shield className="w-10 h-10 text-indigo-600" />,
-      title: 'Enterprise Security',
-      description: 'Bank-level encryption keeps your personal information and applications secure.',
-      benefit: '100% secure',
-      color: 'indigo'
+      icon: <DollarSign className="w-10 h-10 text-green-600" />,
+      title: 'ROI: 51x',
+      description: 'Invest $39/month now, avoid underemployment worth $1.2M over your career. Starting strong pays off for decades.',
+      benefit: '$1.2M impact',
+      color: 'green'
     },
   ]
 
@@ -131,16 +131,23 @@ export default function Home() {
 
             {/* Main headline with animated gradient */}
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
-              Land Your Dream Internship
+              41% of Your Classmates
               <br />
               <GradientText colors={['#FBBF24', '#F59E0B', '#EC4899']} className="text-5xl sm:text-7xl">
-                10x Faster
+                Will Be Underemployed.
               </GradientText>
+              <br />
+              <span className="text-4xl sm:text-5xl text-white">You Won't Be.</span>
             </h1>
 
-            <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Stop wasting 5+ hours daily on job applications. Sivio's AI-powered platform automates everything
-              from finding perfect-fit roles to connecting with hiring managers.
+            <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
+              Students waste <span className="font-bold text-white">100+ hours per month</span> on applications
+              with only a <span className="font-bold text-white">2% response rate</span>. Sivio's AI automates
+              everything from finding perfect-fit roles to reaching hiring managers directly.
+            </p>
+
+            <p className="text-sm text-blue-200 mb-8 max-w-2xl mx-auto">
+              Sources: Federal Reserve Bank of New York (2023), Handshake Student Index (2023), Jobvite Report (2023)
             </p>
 
             {/* CTA Buttons */}
@@ -169,36 +176,40 @@ export default function Home() {
               <ScrollReveal delay={0} className="stagger-1">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={10000} suffix="+" />
+                    <CountUpNumber end={80} suffix="%" />
                   </div>
-                  <div className="text-blue-100 text-sm">Students Placed</div>
+                  <div className="text-blue-100 text-sm">Time Saved</div>
+                  <div className="text-blue-300 text-xs mt-1">vs manual apps</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={100} className="stagger-2">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={85} suffix="%" />
+                    <CountUpNumber end={3} suffix="x" />
                   </div>
-                  <div className="text-blue-100 text-sm">Interview Rate</div>
+                  <div className="text-blue-100 text-sm">Higher Response</div>
+                  <div className="text-blue-300 text-xs mt-1">with smart outreach</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={200} className="stagger-3">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={5} suffix="hrs" />
+                    $1.2M
                   </div>
-                  <div className="text-blue-100 text-sm">Saved Weekly</div>
+                  <div className="text-blue-100 text-sm">Lifetime Earnings</div>
+                  <div className="text-blue-300 text-xs mt-1">with right start</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={300} className="stagger-4">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    $<CountUpNumber end={75} suffix="K" />
+                    <CountUpNumber end={50} suffix="K+" />
                   </div>
-                  <div className="text-blue-100 text-sm">Avg Offer</div>
+                  <div className="text-blue-100 text-sm">Live Jobs</div>
+                  <div className="text-blue-300 text-xs mt-1">updated daily</div>
                 </div>
               </ScrollReveal>
             </div>

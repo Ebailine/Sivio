@@ -146,8 +146,11 @@ export default function AboutPage() {
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
-            <p className="text-xl sm:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Every student deserves access to the same tools and opportunities as those with connections. We're leveling the playing field with AI and automation.
+            <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
+              41% of college graduates end up underemployed. We're building a world where talent—not connections—determines success.
+            </p>
+            <p className="text-lg text-blue-200 mb-12 max-w-3xl mx-auto">
+              By 2030, we aim to help 1 million students land internships that launch extraordinary careers.
             </p>
           </ScrollReveal>
 
@@ -200,19 +203,19 @@ export default function AboutPage() {
             <Card className="bg-white rounded-3xl p-12">
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                  <strong className="text-gray-900">Sivio was born from a simple frustration:</strong> the job search process is fundamentally broken.
+                  <strong className="text-gray-900">The Problem:</strong> 41% of college graduates are underemployed in their first job (Federal Reserve Bank of NY, 2023). That's not a skills problem—it's a broken system.
                 </p>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  As college students ourselves, we watched talented peers spend <strong>5+ hours daily</strong> applying to hundreds of jobs, only to face rejection after rejection. The problem wasn't their qualifications—it was the system.
+                  Students waste <strong>100+ hours per month</strong> applying to hundreds of jobs with only a <strong>2% response rate</strong>. The average job search takes <strong>6 months</strong>. Meanwhile, 85% of jobs are filled through networking—giving connected students an enormous advantage.
                 </p>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  Traditional job boards are <strong>black holes</strong>. Applications disappear without a trace. Response rates hover around <strong>2%</strong>. Students with connections get interviews, while equally talented students without networks get ignored.
+                  <strong className="text-gray-900">The Cost:</strong> Starting your career underemployed costs <strong>$1.2 million in lifetime earnings</strong> (Federal Reserve Bank of St. Louis, 2022). The first job matters—a lot.
                 </p>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  We asked ourselves: <em>"What if every student had the same advantages as those with insider connections?"</em>
+                  <strong className="text-gray-900">Our Solution:</strong> Sivio gives every student the same tools as those with insider connections. AI job matching cuts through 50,000+ listings. Auto-apply submits hundreds of applications monthly. Contact finder reaches hiring managers directly. Smart outreach gets 3x higher response rates.
                 </p>
                 <p className="text-gray-700 leading-relaxed">
-                  That question became Sivio. By combining <strong>automation, AI, and strategic outreach</strong>, we give every student—regardless of their network—the tools to compete and win in today's competitive job market.
+                  <em className="text-blue-600 font-semibold">Result: Students cut their job search from 6 months to weeks, avoid underemployment, and start careers that compound into millions in lifetime earnings.</em>
                 </p>
               </div>
             </Card>
