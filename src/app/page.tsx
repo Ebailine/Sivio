@@ -16,6 +16,8 @@ import { ParticlesBackground } from '@/components/ui/ParticlesBackground'
 import { MouseGradient } from '@/components/ui/MouseGradient'
 import { GradientText } from '@/components/ui/GradientText'
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
+import { ComparisonWidget } from '@/components/ui/ComparisonWidget'
+import { BetaCounter } from '@/components/ui/BetaCounter'
 import {
   Sparkles,
   Zap,
@@ -344,6 +346,35 @@ export default function Home() {
               </div>
             </ScrollReveal>
           </div>
+        </div>
+      </section>
+
+      {/* Comparison Widget Section */}
+      <section className="relative py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl sm:text-5xl font-black text-gray-900 mb-6">
+                See The <span className="text-red-600">Difference</span>
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Watch how mass application platforms waste your time vs Sivio's quality-first approach
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={200}>
+            <ComparisonWidget />
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Beta Counter Section */}
+      <section className="relative py-24 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+        <div className="max-w-4xl mx-auto px-6">
+          <ScrollReveal>
+            <BetaCounter variant="full" showCTA={true} />
+          </ScrollReveal>
         </div>
       </section>
 
