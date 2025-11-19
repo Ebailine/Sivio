@@ -33,11 +33,18 @@ export async function GET() {
     }
 
     // Fetch all contacts for this user
+    console.log('[Contacts API] Fetching contacts for user_id:', user.id)
+
     const { data: contacts, error } = await supabase
       .from('contacts')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+
+    console.log('[Contacts API] Query result:', {
+      contactsCount: contacts?.length || 0,
+      error: error?.message || null
+    })
 
     if (error) {
       console.error('Failed to fetch contacts:', error)
