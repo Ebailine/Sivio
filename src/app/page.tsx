@@ -8,6 +8,7 @@
 import { useUser } from '@clerk/nextjs'
 import MainNav from '@/components/MainNav'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { FloatingCard } from '@/components/ui/FloatingCard'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { CountUpNumber } from '@/components/ui/CountUpNumber'
@@ -126,28 +127,20 @@ export default function Home() {
             {/* Animated badge */}
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-8 animate-pulse-glow">
               <Sparkles className="w-5 h-5" />
-              <span className="font-semibold">Trusted by 10,000+ students at top universities</span>
+              <span className="font-semibold">Limited Beta Access • Join the Waitlist</span>
             </div>
 
             {/* Main headline with animated gradient */}
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
-              41% of Your Classmates
-              <br />
               <GradientText colors={['#FBBF24', '#F59E0B', '#EC4899']} className="text-5xl sm:text-7xl">
-                Will Be Underemployed.
+                41% Underemployed.
               </GradientText>
               <br />
-              <span className="text-4xl sm:text-5xl text-white">You Won't Be.</span>
+              <span className="text-4xl sm:text-5xl text-white">Your First Job Decides Everything.</span>
             </h1>
 
-            <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
-              Students waste <span className="font-bold text-white">100+ hours per month</span> on applications
-              with only a <span className="font-bold text-white">2% response rate</span>. Sivio's AI automates
-              everything from finding perfect-fit roles to reaching hiring managers directly.
-            </p>
-
-            <p className="text-sm text-blue-200 mb-8 max-w-2xl mx-auto">
-              Sources: Federal Reserve Bank of New York (2023), Handshake Student Index (2023), Jobvite Report (2023)
+            <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">
+              They have connections. You have Sivio.
             </p>
 
             {/* CTA Buttons */}
@@ -176,43 +169,127 @@ export default function Home() {
               <ScrollReveal delay={0} className="stagger-1">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={80} suffix="%" />
+                    <CountUpNumber end={41} suffix="%" />
                   </div>
-                  <div className="text-blue-100 text-sm">Time Saved</div>
-                  <div className="text-blue-300 text-xs mt-1">vs manual apps</div>
+                  <div className="text-blue-100 text-sm">Underemployed</div>
+                  <div className="text-blue-300 text-xs mt-1">Federal Reserve, 2023</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={100} className="stagger-2">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={3} suffix="x" />
+                    <CountUpNumber end={2} suffix="%" />
                   </div>
-                  <div className="text-blue-100 text-sm">Higher Response</div>
-                  <div className="text-blue-300 text-xs mt-1">with smart outreach</div>
+                  <div className="text-blue-100 text-sm">Response Rate</div>
+                  <div className="text-blue-300 text-xs mt-1">cold applications</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={200} className="stagger-3">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    $1.2M
+                    <CountUpNumber end={6} suffix=" mo" />
                   </div>
-                  <div className="text-blue-100 text-sm">Lifetime Earnings</div>
-                  <div className="text-blue-300 text-xs mt-1">with right start</div>
+                  <div className="text-blue-100 text-sm">Average Search</div>
+                  <div className="text-blue-300 text-xs mt-1">wasted time</div>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={300} className="stagger-4">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-colors">
                   <div className="text-4xl font-black mb-2">
-                    <CountUpNumber end={50} suffix="K+" />
+                    <CountUpNumber end={300} suffix="+" />
                   </div>
-                  <div className="text-blue-100 text-sm">Live Jobs</div>
-                  <div className="text-blue-300 text-xs mt-1">updated daily</div>
+                  <div className="text-blue-100 text-sm">Beta Users</div>
+                  <div className="text-blue-300 text-xs mt-1">limited access</div>
                 </div>
               </ScrollReveal>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The Problem - Story Format */}
+      <section className="relative py-24 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <ScrollReveal>
+            <h2 className="text-4xl sm:text-5xl font-black text-gray-900 text-center mb-16">
+              The <span className="text-red-600">Problem</span>
+            </h2>
+          </ScrollReveal>
+
+          <div className="space-y-12">
+            <ScrollReveal delay={100}>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-900 mb-4">
+                  41% of college graduates end up underemployed in their first job.
+                </p>
+                <p className="text-lg text-gray-600">
+                  That's <span className="font-semibold text-gray-900">not a skills problem</span>. It's a broken system.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={200}>
+              <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">What's Been Happening</h3>
+                <ul className="space-y-3 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <span className="text-red-600 font-bold mt-1">•</span>
+                    <span>Students waste <strong>100+ hours per month</strong> on applications with only a <strong>2% response rate</strong></span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-red-600 font-bold mt-1">•</span>
+                    <span>The average job search takes <strong>6 months</strong> of grinding with no results</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-red-600 font-bold mt-1">•</span>
+                    <span><strong>85% of jobs</strong> are filled through networking—not job boards</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-red-600 font-bold mt-1">•</span>
+                    <span>Starting underemployed costs you <strong>$1.2 million</strong> in lifetime earnings</span>
+                  </li>
+                </ul>
+              </Card>
+            </ScrollReveal>
+
+            <ScrollReveal delay={300}>
+              <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">The Truth</h3>
+                <p className="text-lg text-gray-700 mb-4">
+                  Most students who succeed have <strong className="text-blue-600">one of two advantages</strong>:
+                </p>
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-white p-6 rounded-xl border border-blue-200">
+                    <div className="text-4xl mb-3">🎓</div>
+                    <h4 className="font-bold text-gray-900 mb-2">Target School</h4>
+                    <p className="text-gray-600 text-sm">Harvard, Stanford, MIT get direct recruiter pipelines</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl border border-blue-200">
+                    <div className="text-4xl mb-3">🤝</div>
+                    <h4 className="font-bold text-gray-900 mb-2">Connections</h4>
+                    <p className="text-gray-600 text-sm">Parents, alumni, friends who can make introductions</p>
+                  </div>
+                </div>
+                <p className="text-lg font-semibold text-gray-900">
+                  If you don't have either? <span className="text-red-600">You're fighting uphill.</span>
+                </p>
+              </Card>
+            </ScrollReveal>
+
+            <ScrollReveal delay={400}>
+              <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white p-12 rounded-3xl">
+                <h3 className="text-3xl font-black mb-4">We Built Sivio for You</h3>
+                <p className="text-xl text-blue-100 mb-6">
+                  No connections? No target school? No problem.
+                </p>
+                <p className="text-lg">
+                  Sivio gives you the <strong>same tools</strong> privileged students have had for years.
+                </p>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -315,10 +392,10 @@ export default function Home() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-black mb-6">
-                Loved by <span className="text-yellow-300">10,000+ Students</span>
+                Loved by Our <span className="text-yellow-300">Beta Users</span>
               </h2>
               <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-                Join thousands of students landing their dream internships
+                Early feedback from students testing Sivio
               </p>
             </div>
           </ScrollReveal>
@@ -352,15 +429,15 @@ export default function Home() {
             <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-white">
               <Rocket className="w-16 h-16 mx-auto mb-6 animate-float" />
               <h2 className="text-4xl font-black mb-4">
-                Ready to 10x Your Job Search?
+                Join the Beta Waitlist
               </h2>
               <p className="text-xl text-blue-100 mb-8">
-                Join 10,000+ students landing internships faster with Sivio
+                Limited access • Get early access to Sivio before public launch
               </p>
               <Button variant="gradient" size="lg" href="/sign-up" className="bg-white text-blue-600 hover:scale-110">
-                Start Free Trial →
+                Request Beta Access →
               </Button>
-              <p className="text-sm text-blue-200 mt-4">No credit card required • 7-day free trial</p>
+              <p className="text-sm text-blue-200 mt-4">Free during beta • No credit card required</p>
             </div>
           </ScrollReveal>
         </div>

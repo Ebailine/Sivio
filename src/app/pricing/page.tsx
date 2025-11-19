@@ -30,39 +30,66 @@ export default function PricingPage() {
 
   const plans = [
     {
-      name: 'Starter',
+      name: 'Free',
       monthlyPrice: 0,
       annualPrice: 0,
-      description: 'Perfect for getting started',
+      description: 'Try Sivio with limited access',
       icon: <Sparkles className="w-8 h-8 text-gray-600" />,
       features: [
-        '10 applications per month',
+        '5 automated applications/month',
+        '10 outreach contacts/month',
         'Basic job search',
         'Application tracking',
-        'Email support',
         'CRM access',
+        'Email support',
       ],
       notIncluded: [
-        'Auto-apply',
+        'Unlimited applications',
+        'AI job matching',
         'Contact finder',
-        'AI outreach',
         'Priority support',
       ],
-      cta: 'Get Started Free',
+      cta: 'Start Free',
       href: '/sign-up',
       popular: false,
       gradient: 'from-gray-50 to-gray-100',
       borderColor: 'border-gray-200',
     },
     {
-      name: 'Pro',
-      monthlyPrice: 39,
-      annualPrice: 31, // $31/mo when billed annually ($372/year) - 20% off
-      description: 'For serious job seekers',
+      name: 'Basic',
+      monthlyPrice: 29,
+      annualPrice: 23, // $23/mo when billed annually - 20% off
+      description: 'Essential tools for job seekers',
       icon: <Zap className="w-8 h-8 text-blue-600" />,
       features: [
+        '50 automated applications/month',
+        '50 outreach contacts/month',
+        'AI-powered job matching',
+        'Advanced CRM & analytics',
+        'Application tracking',
+        'Email support',
+      ],
+      notIncluded: [
         'Unlimited applications',
-        '50 contact searches/month',
+        'Unlimited contacts',
+        'Priority support',
+        'Interview prep resources',
+      ],
+      cta: 'Start Free Trial',
+      href: '/sign-up',
+      popular: false,
+      gradient: 'from-blue-500 to-blue-600',
+      borderColor: 'border-blue-400',
+    },
+    {
+      name: 'Premium',
+      monthlyPrice: 49,
+      annualPrice: 39, // $39/mo when billed annually ($468/year) - 20% off
+      description: 'Best value for serious students',
+      icon: <Crown className="w-8 h-8 text-purple-600" />,
+      features: [
+        'Unlimited automated applications',
+        '200 outreach contacts/month',
         'AI-powered job matching',
         'Auto-apply (coming soon)',
         'Email outreach automation',
@@ -74,20 +101,20 @@ export default function PricingPage() {
         'Team collaboration',
         'Custom integrations',
       ],
-      cta: 'Start 7-Day Free Trial',
+      cta: 'Start Free Trial',
       href: '/sign-up',
       popular: true,
-      gradient: 'from-blue-600 to-purple-600',
-      borderColor: 'border-blue-500',
+      gradient: 'from-purple-600 to-pink-600',
+      borderColor: 'border-purple-500',
     },
     {
       name: 'Enterprise',
       monthlyPrice: null,
       annualPrice: null,
-      description: 'For universities & teams',
-      icon: <Crown className="w-8 h-8 text-purple-600" />,
+      description: 'For universities & career centers',
+      icon: <Shield className="w-8 h-8 text-green-600" />,
       features: [
-        'Everything in Pro',
+        'Everything in Premium',
         'Unlimited contacts/month',
         'Team accounts (5+ seats)',
         'Custom integrations',
@@ -102,8 +129,8 @@ export default function PricingPage() {
       cta: 'Contact Sales',
       href: '/contact',
       popular: false,
-      gradient: 'from-purple-600 to-pink-600',
-      borderColor: 'border-purple-500',
+      gradient: 'from-green-600 to-emerald-600',
+      borderColor: 'border-green-500',
     },
   ]
 
@@ -170,17 +197,15 @@ export default function PricingPage() {
 
           <ScrollReveal delay={100}>
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
-              Invest $39/Month,
+              <span className="text-yellow-300">Free During Beta.</span>
               <br />
-              <span className="text-yellow-300">Earn $1.2M More</span>
-              <br />
-              <span className="text-4xl sm:text-5xl">Over Your Lifetime</span>
+              <span className="text-4xl sm:text-5xl">Invest Later, Earn Millions More.</span>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={200}>
             <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
-              Avoiding underemployment pays off for decades. Start strong, earn millions more.
+              Try Sivio free while we're in beta. When you're ready to upgrade, avoid underemployment and earn $1.2M more over your lifetime.
             </p>
             <p className="text-sm text-blue-200 mb-12 max-w-2xl mx-auto">
               Source: Federal Reserve Bank of St. Louis (2022) - Lifetime earnings difference between strong career starts vs. underemployment
@@ -209,7 +234,7 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="relative py-24 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {plans.map((plan, index) => (
               <ScrollReveal key={plan.name} delay={index * 100}>
                 <Card className={`h-full relative ${plan.popular ? 'ring-4 ring-blue-500 shadow-2xl' : ''}`}>
@@ -297,15 +322,15 @@ export default function PricingPage() {
             ))}
           </div>
 
-          {/* Student Discount Banner */}
+          {/* Beta Notice Banner */}
           <ScrollReveal delay={300}>
-            <div className="mt-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white text-center shadow-xl">
-              <h3 className="text-2xl font-bold mb-2">🎓 Student Discount</h3>
-              <p className="text-green-100 mb-4 text-lg">
-                Get an additional 20% off any paid plan with a valid .edu email address
+            <div className="mt-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white text-center shadow-xl">
+              <h3 className="text-2xl font-bold mb-2">🚀 Limited Beta Access</h3>
+              <p className="text-blue-100 mb-4 text-lg">
+                All plans are currently free during beta. Pricing will be activated after public launch.
               </p>
-              <Button variant="ghost" size="lg" href="/sign-up" className="bg-white text-green-600 hover:bg-green-50">
-                Claim Your Discount →
+              <Button variant="ghost" size="lg" href="/sign-up" className="bg-white text-blue-600 hover:bg-blue-50">
+                Request Access →
               </Button>
             </div>
           </ScrollReveal>
@@ -329,13 +354,13 @@ export default function PricingPage() {
               </div>
               <div className="flex flex-col items-center">
                 <Users className="w-12 h-12 text-pink-600 mb-3" />
-                <div className="font-bold text-gray-900">10,000+ Students</div>
-                <div className="text-sm text-gray-600">Trust Sivio</div>
+                <div className="font-bold text-gray-900">300+ Beta Users</div>
+                <div className="text-sm text-gray-600">Testing Sivio</div>
               </div>
               <div className="flex flex-col items-center">
                 <Star className="w-12 h-12 text-yellow-500 mb-3" />
-                <div className="font-bold text-gray-900">4.9/5 Rating</div>
-                <div className="text-sm text-gray-600">From 2,000+ reviews</div>
+                <div className="font-bold text-gray-900">In Beta</div>
+                <div className="text-sm text-gray-600">Limited access</div>
               </div>
             </div>
           </ScrollReveal>
@@ -372,20 +397,20 @@ export default function PricingPage() {
           <ScrollReveal>
             <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white shadow-2xl">
               <h2 className="text-4xl font-black mb-4">
-                Ready to Land Your Dream Internship?
+                Join the Beta Waitlist
               </h2>
               <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                Join 10,000+ students landing internships faster with Sivio
+                Get early access to Sivio before public launch
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="gradient" size="lg" href="/sign-up" className="bg-white text-blue-600 hover:scale-110">
-                  Start Free Trial →
+                  Request Beta Access →
                 </Button>
                 <Button variant="ghost" size="lg" href="/contact" className="border-2 border-white text-white hover:bg-white/10">
                   Contact Sales
                 </Button>
               </div>
-              <p className="text-sm text-blue-200 mt-6">No credit card required • 14-day money-back guarantee</p>
+              <p className="text-sm text-blue-200 mt-6">Free during beta • Limited access available</p>
             </div>
           </ScrollReveal>
         </div>

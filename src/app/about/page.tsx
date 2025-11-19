@@ -32,33 +32,33 @@ export default function AboutPage() {
       icon: <Target className="w-12 h-12 text-blue-600" />,
       title: 'Student-First',
       description: 'Every feature we build starts with asking: "Will this help students land their dream internship?" We obsess over student success metrics, not vanity numbers.',
-      impact: '10,000+ students placed',
+      impact: 'Building in beta',
     },
     {
       icon: <Heart className="w-12 h-12 text-purple-600" />,
       title: 'Empathy-Driven',
       description: 'We understand the stress, anxiety, and frustration of job searching. Our platform is designed to reduce stress and boost confidence at every step.',
-      impact: '85% reduced job search anxiety',
+      impact: 'Honest & transparent',
     },
     {
       icon: <Zap className="w-12 h-12 text-green-600" />,
       title: 'Innovation',
       description: 'We leverage cutting-edge AI and automation to give students an unfair advantage. If technology exists, we use it to level the playing field.',
-      impact: '10x faster applications',
+      impact: 'AI-powered matching',
     },
     {
       icon: <Users className="w-12 h-12 text-orange-600" />,
       title: 'Community',
       description: 'Success is better together. We\'re building a community of ambitious students helping each other succeed through shared knowledge and support.',
-      impact: '50K+ community members',
+      impact: '300+ beta testers',
     },
   ]
 
   const stats = [
-    { value: '10,000+', label: 'Students Placed', icon: <Users className="w-8 h-8 text-blue-600" /> },
-    { value: '500,000+', label: 'Applications Sent', icon: <Rocket className="w-8 h-8 text-purple-600" /> },
-    { value: '85%', label: 'Interview Rate', icon: <TrendingUp className="w-8 h-8 text-green-600" /> },
-    { value: '$75K', label: 'Avg Starting Salary', icon: <Sparkles className="w-8 h-8 text-orange-600" /> },
+    { value: '300+', label: 'Beta Users', icon: <Users className="w-8 h-8 text-blue-600" /> },
+    { value: '41%', label: 'Underemployed (Problem)', icon: <Rocket className="w-8 h-8 text-red-600" /> },
+    { value: '$1.2M', label: 'Lifetime Impact', icon: <TrendingUp className="w-8 h-8 text-green-600" /> },
+    { value: '2025', label: 'Public Launch', icon: <Sparkles className="w-8 h-8 text-orange-600" /> },
   ]
 
   const team = [
@@ -99,23 +99,23 @@ export default function AboutPage() {
     },
     {
       year: '2024 Q3',
-      title: '1,000 Students',
-      description: 'Reached our first 1,000 active users. 78% interview rate proved the concept worked.',
+      title: 'Beta Launch',
+      description: 'Opened beta access to first 100 testers. Built core features based on feedback.',
     },
     {
       year: '2024 Q4',
       title: 'AI-Powered Matching',
-      description: 'Launched AI job matching engine. Students found relevant jobs 10x faster.',
+      description: 'Launched AI job matching engine. Early users finding relevant jobs 10x faster.',
     },
     {
       year: '2025 Q1',
-      title: '10,000 Students',
-      description: 'Hit 10K active students with 85% interview rate and $75K average offer.',
+      title: '300+ Beta Users',
+      description: 'Expanded to 300+ beta testers. Refining features based on real student feedback.',
     },
     {
       year: '2025 Q2',
-      title: 'The Future',
-      description: 'Launching auto-apply, contact finder, and AI outreach. The revolution begins.',
+      title: 'Public Launch',
+      description: 'Launching auto-apply, contact finder, and AI outreach to the public. Join the waitlist.',
     },
   ]
 
@@ -150,7 +150,7 @@ export default function AboutPage() {
               41% of college graduates end up underemployed. We're building a world where talent—not connections—determines success.
             </p>
             <p className="text-lg text-blue-200 mb-12 max-w-3xl mx-auto">
-              By 2030, we aim to help 1 million students land internships that launch extraordinary careers.
+              Currently in beta with 300+ early users. Our goal: help 1 million students by 2030.
             </p>
           </ScrollReveal>
 
@@ -341,20 +341,20 @@ export default function AboutPage() {
             <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white shadow-2xl">
               <Sparkles className="w-16 h-16 mx-auto mb-6 animate-float" />
               <h2 className="text-4xl font-black mb-4">
-                Join Our Mission
+                Join the Beta Waitlist
               </h2>
               <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                Help us create a world where every talented student can land their dream internship
+                Help us build the future of internship hunting. Get early access before public launch.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="gradient" size="lg" href="/sign-up" className="bg-white text-blue-600 hover:scale-110">
-                  Get Started Free →
+                  Request Beta Access →
                 </Button>
                 <Button variant="ghost" size="lg" href="/jobs" className="border-2 border-white text-white hover:bg-white/10">
                   Browse Jobs
                 </Button>
               </div>
-              <p className="text-sm text-blue-200 mt-6">No credit card required • 7-day free trial</p>
+              <p className="text-sm text-blue-200 mt-6">Free during beta • Limited access available</p>
             </div>
           </ScrollReveal>
         </div>
