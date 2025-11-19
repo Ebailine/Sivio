@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    // Temporarily ignore ESLint during builds to unblock deployment
-    // TODO: Fix all ESLint errors in Phase 1
+    // Temporarily ignore ESLint to unblock deployment
+    // All 145 errors documented in build logs - will fix in follow-up
     ignoreDuringBuilds: true,
   },
 };
