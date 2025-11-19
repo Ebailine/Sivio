@@ -148,23 +148,23 @@ export default function Home() {
             {/* Animated badge */}
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-8 animate-pulse-glow">
               <Sparkles className="w-5 h-5" />
-              <span className="font-semibold">Limited Beta • 300+ Students</span>
+              <span className="font-semibold">Limited Beta • 300+ Students Getting Interviews</span>
             </div>
 
             {/* Main headline with animated gradient */}
             <h1 className="text-5xl sm:text-7xl font-black mb-6 leading-tight">
               <GradientText colors={['#10B981', '#059669', '#047857']} className="text-5xl sm:text-7xl">
-                20% Interview Rate.
+                10x More Interviews.
               </GradientText>
               <br />
-              <span className="text-4xl sm:text-5xl text-white">Not 2%.</span>
+              <span className="text-4xl sm:text-5xl text-white">From 10x Fewer Applications.</span>
             </h1>
 
             <p className="text-xl sm:text-2xl text-blue-100 mb-4 max-w-3xl mx-auto leading-relaxed">
-              Quality over quantity. Sivio doesn't spam applications.
+              While others spam 100+ applications for 2 interviews, our beta users send 12 and get 3.
             </p>
             <p className="text-lg text-blue-200 mb-8 max-w-3xl mx-auto">
-              We find the 10-20 perfect-fit roles each month, connect you with hiring managers directly, and get you real interviews.
+              Quality over quantity. Real hiring managers, real interviews, real offers.
             </p>
 
             {/* CTA Buttons */}
@@ -199,10 +199,10 @@ export default function Home() {
                 <ScrollReveal delay={0} className="stagger-1">
                   <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-2xl p-6 border border-green-400/30 hover:border-green-400/50 transition-colors">
                     <div className="text-4xl font-black mb-2 text-green-300">
-                      <CountUpNumber end={23} suffix="%" />
+                      10x
                     </div>
-                    <div className="text-white text-sm font-semibold">Interview Rate</div>
-                    <div className="text-green-200 text-xs mt-1">vs 2-4% industry avg</div>
+                    <div className="text-white text-sm font-semibold">More Interviews</div>
+                    <div className="text-green-200 text-xs mt-1">than mass platforms</div>
                   </div>
                 </ScrollReveal>
 
@@ -211,18 +211,18 @@ export default function Home() {
                     <div className="text-4xl font-black mb-2 text-blue-300">
                       <CountUpNumber end={12} />
                     </div>
-                    <div className="text-white text-sm font-semibold">Apps/Month</div>
-                    <div className="text-blue-200 text-xs mt-1">vs 109+ industry avg</div>
+                    <div className="text-white text-sm font-semibold">Apps/Month Avg</div>
+                    <div className="text-blue-200 text-xs mt-1">vs 109+ elsewhere</div>
                   </div>
                 </ScrollReveal>
 
                 <ScrollReveal delay={200} className="stagger-3">
                   <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl p-6 border border-purple-400/30 hover:border-purple-400/50 transition-colors">
                     <div className="text-4xl font-black mb-2 text-purple-300">
-                      <CountUpNumber end={67} suffix="%" />
+                      3
                     </div>
-                    <div className="text-white text-sm font-semibold">Direct Outreach</div>
-                    <div className="text-purple-200 text-xs mt-1">vs 0% job boards</div>
+                    <div className="text-white text-sm font-semibold">Interviews Avg</div>
+                    <div className="text-purple-200 text-xs mt-1">from 12 applications</div>
                   </div>
                 </ScrollReveal>
 
