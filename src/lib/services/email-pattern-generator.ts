@@ -1,12 +1,11 @@
 /**
  * Email Pattern Generator
- * Generates and verifies email patterns when Snov.io has no data
+ * Generates common email patterns for contacts
  *
- * COST: 1 credit per verification
- * FALLBACK: When Snov.io Domain Search returns 0 contacts
+ * NOTE: Email verification disabled - patterns generated but not verified
+ * FALLBACK: When LinkedIn search provides contacts without emails
  */
 
-import { snovClient } from '@/lib/snov/client'
 import type { LinkedInContact } from './linkedin-scraper'
 
 export interface GeneratedEmail {
@@ -42,63 +41,31 @@ export class EmailPatternGenerator {
   }
 
   /**
-   * Verify email patterns using Snov.io email verifier
-   * Costs 1 credit per verification
-   * Stops at first valid email to minimize costs
+   * Generate email patterns (verification disabled)
+   * Returns most likely patterns based on common corporate email formats
    */
   async verifyPatterns(
     patterns: Array<{pattern: string, email: string, likelihood: number}>,
     maxVerifications: number = 3
   ): Promise<GeneratedEmail[]> {
     const verified: GeneratedEmail[] = []
-    let verificationsUsed = 0
 
-    console.log(`[Pattern Generator] Verifying up to ${maxVerifications} patterns...`)
+    console.log(`[Pattern Generator] Generating ${maxVerifications} most likely email patterns...`)
+    console.log(`⚠️  Note: Email verification disabled - patterns are unverified`)
 
-    for (const {pattern, email, likelihood} of patterns) {
-      if (verificationsUsed >= maxVerifications) {
-        console.log(`[Pattern Generator] Reached max verifications (${maxVerifications})`)
-        break
-      }
-
-      try {
-        const result = await snovClient.verifyEmail(email)
-        verificationsUsed++
-
-        console.log(`[Pattern Generator] Verified ${email}: ${result.result}`)
-
-        if (result.result === 'valid') {
-          // Found a valid email - stop here!
-          verified.push({
-            email,
-            pattern,
-            confidence: likelihood > 20 ? 'high' : likelihood > 10 ? 'medium' : 'low',
-            verified: true,
-            status: 'valid'
-          })
-          console.log(`✅ Valid email found: ${email} (pattern: ${pattern})`)
-          break // Stop after first valid email
-        }
-
-        if (result.result === 'catch-all') {
-          // Catch-all - might work, keep as backup
-          verified.push({
-            email,
-            pattern,
-            confidence: 'medium',
-            verified: true,
-            status: 'catch-all'
-          })
-        }
-
-        // If invalid, continue to next pattern
-      } catch (error) {
-        console.error(`[Pattern Generator] Verification failed for ${email}:`, error)
-        // Continue to next pattern
-      }
+    // Return the most likely patterns (top maxVerifications) without verification
+    for (const {pattern, email, likelihood} of patterns.slice(0, maxVerifications)) {
+      verified.push({
+        email,
+        pattern,
+        confidence: likelihood > 20 ? 'high' : likelihood > 10 ? 'medium' : 'low',
+        verified: false, // Not verified
+        status: 'unknown' // Cannot verify without Snov.io
+      })
+      console.log(`📧 Generated pattern: ${email} (${pattern}, likelihood: ${likelihood}%)`)
     }
 
-    console.log(`[Pattern Generator] Verified ${verificationsUsed} patterns, found ${verified.length} usable emails`)
+    console.log(`[Pattern Generator] Generated ${verified.length} email patterns`)
     return verified
   }
 

@@ -1,6 +1,6 @@
 /**
  * AI-Powered Contact Search API
- * Uses Claude AI to minimize Snov.io credit usage while maximizing contact quality
+ * Uses Claude AI with Apify + Apollo for contact discovery
  *
  * GET: Fetch all contacts for the authenticated user
  * POST: Find new contacts for a job posting
@@ -9,12 +9,9 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { snovClient } from '@/lib/snov/client'
 import { contactReasoner } from '@/lib/services/contact-reasoner'
 import { jobAnalyzer } from '@/lib/services/job-analyzer'
 import { companyResearcher } from '@/lib/services/company-researcher'
-// REMOVED FAKE NAME GENERATOR - was generating fictional people like "Priya Patel", "Ahmed Hassan"
-// import { linkedInScraper } from '@/lib/services/linkedin-scraper'
 import { linkedInContactFinder } from '@/lib/services/linkedin-contact-finder'
 import { creditTracker } from '@/lib/services/credit-tracker'
 import { emailPatternGenerator } from '@/lib/services/email-pattern-generator'
@@ -211,7 +208,7 @@ export async function POST(request: Request) {
       }
 
       console.log('📄 Job URL:', fullJobUrl)
-      console.log('💰 Cost optimization: Fetching full job details BEFORE using Snov.io credits')
+      console.log('💰 Cost optimization: Fetching full job details BEFORE contact search')
 
       try {
         // Check cache first to avoid expensive AI calls
@@ -385,55 +382,25 @@ export async function POST(request: Request) {
       console.log('⚡ BYPASS CACHE: User requested fresh search, skipping cache check...')
     }
 
-    // STEP 3.5 + 4: PARALLEL Processing (LinkedIn + Snov.io)
-    // ⚡ PERFORMANCE OPTIMIZATION: Run both simultaneously to save ~3-5 seconds!
-    console.log('=== Step 3.5 + 4: PARALLEL Processing ===')
-    console.log('⚡ Running LinkedIn analysis and Snov.io search in parallel...')
+    // STEP 3.5: LinkedIn Contact Search (Primary Method)
+    console.log('=== Step 3.5: LinkedIn Contact Search ===')
     console.log('Domain to search:', searchDomain)
     console.log('AI strategy:', strategy.approach, '- targeting:', strategy.targetTitles?.slice(0, 3).join(', ') || 'HR/recruiters')
 
     let linkedInContacts: any[] = []
-    let snovResults: any[] = []
-    let parallelStart = Date.now()
+    let searchStart = Date.now()
 
     try {
-      // Run both operations in parallel with Promise.all
-      const [linkedInResults, snovResults_] = await Promise.all([
-        // LinkedIn REAL CONTACT SEARCH (uses web search to find actual people)
-        (async () => {
-          try {
-            console.log('  🔍 [LinkedIn] Searching for REAL employees via web search...')
-            const contacts = await linkedInContactFinder.findRealContacts(
-              company,
-              searchDomain,
-              jobTitle
-            )
-            console.log(`  ✅ [LinkedIn] Found ${contacts.length} REAL people (${contacts.filter(c => c.isHRRole).length} HR roles)`)
-            return contacts
-          } catch (error) {
-            console.error('  ⚠️  [LinkedIn] Error (non-fatal):', error)
-            return [] // Return empty array on error
-          }
-        })(),
+      // LinkedIn REAL CONTACT SEARCH (uses web search to find actual people)
+      console.log('  🔍 [LinkedIn] Searching for REAL employees via web search...')
+      linkedInContacts = await linkedInContactFinder.findRealContacts(
+        company,
+        searchDomain,
+        jobTitle
+      )
+      console.log(`  ✅ [LinkedIn] Found ${linkedInContacts.length} REAL people (${linkedInContacts.filter(c => c.isHRRole).length} HR roles)`)
 
-        // Snov.io Domain Search (1 credit)
-        (async () => {
-          try {
-            console.log('  🔍 [Snov.io] Starting domain search...')
-            const results = await snovClient.searchByDomain(searchDomain, 100)
-            console.log(`  ✅ [Snov.io] Returned ${results?.length || 0} contacts`)
-            return results || []
-          } catch (error: any) {
-            console.error('  ❌ [Snov.io] API error:', error.message)
-            return [] // Return empty array on error - will use fallback
-          }
-        })()
-      ])
-
-      linkedInContacts = linkedInResults
-      snovResults = snovResults_
-
-      // Add company website team members as a third data source
+      // Add company website team members as additional data source
       if (companyData && companyData.teamMembers.length > 0) {
         console.log(`  🏢 [Company Website] Found ${companyData.teamMembers.length} team members from website`)
 
@@ -461,317 +428,30 @@ export async function POST(request: Request) {
         console.log(`  ✅ [Company Website] Added ${newWebsiteContacts.length} unique contacts (${newWebsiteContacts.filter((c: any) => c.isHRRole).length} HR roles)`)
       }
 
-      measureStep('PARALLEL Processing (LinkedIn + Snov.io)', parallelStart)
-      const timeSaved = parallelStart // Estimate: would have been ~5-7s sequential, now ~3-4s parallel
-      console.log(`⚡ Parallel processing complete in ${Date.now() - parallelStart}ms`)
-      console.log(`   📊 LinkedIn: ${linkedInContacts.length} contacts`)
-      console.log(`   📊 Snov.io: ${snovResults.length} contacts`)
+      measureStep('LinkedIn Contact Search', searchStart)
+      console.log(`✅ Contact search complete in ${Date.now() - searchStart}ms`)
+      console.log(`   📊 Total contacts found: ${linkedInContacts.length}`)
 
       if (linkedInContacts.length > 0) {
-        console.log('   Top 3 LinkedIn contacts:')
+        console.log('   Top 3 contacts:')
         linkedInContacts.slice(0, 3).forEach(c => {
           console.log(`      • ${c.name} - ${c.title} (score: ${c.relevanceScore})`)
         })
       }
     } catch (error) {
-      console.error('❌ Parallel processing failed:', error)
+      console.error('❌ Contact search failed:', error)
       // Continue with empty results - fallback will handle it
     }
 
-    // Note: We'll do smart verification AFTER combining results to avoid duplicate work
-
-    // Log Snov.io details if we got results
-    if (snovResults && snovResults.length > 0) {
-      console.log('=== 🔍 SNOV.IO DEBUG - FULL DATA ===')
-      console.log('Total contacts:', snovResults.length)
-
-      // Log ALL contacts (not just sample)
-      console.log('ALL CONTACTS FROM SNOV.IO:')
-      snovResults.forEach((c, i) => {
-        console.log(`  ${i + 1}. ${c.firstName} ${c.lastName} - ${c.position || 'NO TITLE'} - ${c.email || 'NO EMAIL'}`)
-      })
-
-      // Log what types of positions were found
-      const positions = snovResults.map(c => c.position).filter(Boolean)
-      const hrPositions = positions.filter(p =>
-        p && (p.toLowerCase().includes('hr') ||
-              p.toLowerCase().includes('recruit') ||
-              p.toLowerCase().includes('talent') ||
-              p.toLowerCase().includes('human resources'))
-      )
-      console.log(`\n📊 BREAKDOWN: ${hrPositions.length} HR/recruiting contacts out of ${positions.length} total`)
-
-      if (hrPositions.length > 0) {
-        console.log('HR ROLES FOUND:', hrPositions.slice(0, 10))
-      } else {
-        console.log('⚠️ NO HR ROLES FOUND IN SNOV.IO RESULTS')
-      }
-
-      // Log first 5 full contact objects
-      console.log('\nFIRST 5 FULL CONTACT OBJECTS:')
-      console.log(JSON.stringify(snovResults.slice(0, 5), null, 2))
-      console.log('=== END SNOV.IO DEBUG ===\n')
-    }
-
-    if (!snovResults || snovResults.length === 0) {
-      console.log('\n=== ⚠️ SNOV.IO RETURNED ZERO CONTACTS ===')
+    // If no contacts found, proceed to fallback
+    if (!linkedInContacts || linkedInContacts.length === 0) {
+      console.log('\n=== ⚠️ NO CONTACTS FOUND ===')
       console.log(`Company: ${company}`)
       console.log(`Domain searched: ${searchDomain}`)
-      console.log('This means Snov.io has NO data for this company')
-      console.log('🔄 Activating multi-tier fallback system...')
-      console.log('=== END ZERO RESULTS DEBUG ===\n')
+      console.log('🔄 Activating fallback guidance...')
+      console.log('=== END NO RESULTS DEBUG ===\n')
 
-      // FALLBACK TIER 1: Email Pattern Generation (costs 1-3 credits per contact)
-      if (linkedInContacts && linkedInContacts.length > 0) {
-        console.log('=== Fallback Tier 1: Email Pattern Generation ===')
-        console.log(`Attempting to generate emails for ${linkedInContacts.length} LinkedIn contacts...`)
-
-        try {
-          const contactsWithEmails = await emailPatternGenerator.generateVerifiedEmails(
-            linkedInContacts.slice(0, 4), // Only top 4 to control costs
-            searchDomain,
-            2 // Max 2 verifications per contact to stay under budget
-          )
-
-          const validEmails = contactsWithEmails.filter(c => c.generatedEmail?.status === 'valid')
-
-          if (validEmails.length > 0) {
-            console.log(`✅ Pattern generation SUCCESS: ${validEmails.length} valid emails found`)
-
-            // Convert to standard contact format
-            const patternContacts = validEmails.map(c => ({
-              email: c.generatedEmail!.email,
-              first_name: c.name.split(' ')[0],
-              last_name: c.name.split(' ').slice(1).join(' ') || '',
-              full_name: c.name,
-              position: c.title,
-              company_name: company,
-              company_domain: searchDomain,
-              linkedin_url: c.profileUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + c.title)}`,
-              email_status: c.generatedEmail!.status,
-              relevance_score: c.relevanceScore,
-              is_key_decision_maker: c.relevanceScore >= 85,
-              department: c.department,
-              source: 'pattern_generated',
-              metadata: {
-                aiReasoning: c.reasoning,
-                emailPattern: c.generatedEmail!.pattern,
-                patternConfidence: c.generatedEmail!.confidence,
-                fallbackTier: 'pattern_generation',
-              }
-            }))
-
-            // Save to database
-            const { data: savedContacts, error: saveError } = await supabase
-              .from('contacts')
-              .insert(patternContacts)
-              .select()
-
-            if (saveError) {
-              console.error('Error saving pattern-generated contacts:', saveError)
-            }
-
-            // Calculate cost (pattern generation used ~2 verifications per contact)
-            const verificationsUsed = validEmails.length * 2 // Estimate
-            const totalCreditCost = verificationsUsed
-
-            if (user.credits < totalCreditCost) {
-              return NextResponse.json(
-                {
-                  error: 'Insufficient credits',
-                  message: `Found ${validEmails.length} contacts via pattern generation (${totalCreditCost} credits required). You have ${user.credits} credits.`,
-                  contactsFound: validEmails.length,
-                  creditsRequired: totalCreditCost,
-                },
-                { status: 402 }
-              )
-            }
-
-            // Deduct credits
-            await supabase
-              .from('users')
-              .update({ credits: user.credits - totalCreditCost })
-              .eq('id', user.id)
-
-            await supabase.from('credit_transactions').insert({
-              user_id: user.id,
-              amount: -totalCreditCost,
-              type: 'contact_search',
-              description: `Pattern-generated emails for ${company} (${validEmails.length} contacts, ${verificationsUsed} verifications)`,
-              metadata: {
-                fallbackMode: true,
-                fallbackTier: 'pattern_generation',
-                contactsFound: validEmails.length,
-                verificationsUsed,
-              },
-            })
-
-            console.log(`💰 Pattern generation: ${totalCreditCost} credits for ${validEmails.length} contacts`)
-            console.log('=== Pattern Generation Fallback Complete ===')
-
-            return NextResponse.json({
-              success: true,
-              contacts: savedContacts || patternContacts,
-              creditsRemaining: user.credits - totalCreditCost,
-              creditsDeducted: totalCreditCost,
-              fallback_mode: true,
-              fallback_type: 'pattern_generated',
-              message: `Found ${validEmails.length} contacts via email pattern generation (verified emails).`,
-              strategy: {
-                reasoning: strategy.reasoning,
-                confidence: strategy.confidenceScore,
-                approach: strategy.approach,
-              },
-            })
-          } else {
-            console.log('⚠️ Pattern generation found no valid emails - trying LinkedIn-only fallback')
-          }
-        } catch (error) {
-          console.error('Pattern generation failed:', error)
-          console.log('🔄 Falling back to LinkedIn-only mode')
-        }
-      }
-
-      // FALLBACK TIER 2: Use LinkedIn-inferred contacts (NO VERIFIED EMAILS)
-      if (linkedInContacts && linkedInContacts.length > 0) {
-        console.log(`✅ Using ${linkedInContacts.length} LinkedIn-inferred contacts (FREE)`)
-
-        // Convert LinkedIn contacts to standard format
-        const linkedInOnlyContacts = linkedInContacts.slice(0, 4).map((lc, index) => {
-          const nameParts = lc.name.split(' ')
-          const firstName = nameParts[0] || 'Unknown'
-          const lastName = nameParts.slice(1).join(' ') || ''
-
-          return {
-            email: null, // No verified email available
-            first_name: firstName,
-            last_name: lastName,
-            full_name: lc.name,
-            position: lc.title,
-            company_name: company,
-            company_domain: searchDomain,
-            linkedin_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + lc.title)}`,
-            email_status: 'unknown' as const,
-            relevance_score: lc.relevanceScore,
-            is_key_decision_maker: lc.relevanceScore >= 85,
-            department: lc.department,
-            source: 'linkedin_inferred',
-            metadata: {
-              aiReasoning: lc.reasoning,
-              contactMethod: 'linkedin',
-              searchGuidance: `Search for "${lc.name}" at "${company}" on LinkedIn`,
-              isInferredContact: true,
-              fallbackMode: true,
-            }
-          }
-        })
-
-        // Save to database
-        const { data: savedContacts, error: saveError } = await supabase
-          .from('contacts')
-          .insert(linkedInOnlyContacts)
-          .select()
-
-        if (saveError) {
-          console.error('Error saving LinkedIn contacts:', saveError)
-        } else {
-          console.log(`✅ Saved ${savedContacts?.length} LinkedIn contacts to database`)
-        }
-
-        // Charge 1 credit per contact (fair pricing for AI-inferred data)
-        const contactsFound = linkedInOnlyContacts.length
-        const totalCreditCost = contactsFound * CREDIT_COST_PER_CONTACT
-
-        // Check if user has enough credits
-        if (user.credits < totalCreditCost) {
-          return NextResponse.json(
-            {
-              error: 'Insufficient credits',
-              message: `Found ${contactsFound} likely contacts (${totalCreditCost} credits required). You have ${user.credits} credits.`,
-              contactsFound,
-              creditsRequired: totalCreditCost,
-            },
-            { status: 402 }
-          )
-        }
-
-        // Deduct credits
-        await supabase
-          .from('users')
-          .update({ credits: user.credits - totalCreditCost })
-          .eq('id', user.id)
-
-        await supabase.from('credit_transactions').insert({
-          user_id: user.id,
-          amount: -totalCreditCost,
-          type: 'contact_search',
-          description: `LinkedIn-inferred contacts for ${company} (${contactsFound} contacts)`,
-          metadata: {
-            fallbackMode: true,
-            contactMethod: 'linkedin',
-            contactsFound,
-            snovResultsCount: 0,
-          },
-        })
-
-        // Track credit usage
-        const hrContactsFound = linkedInOnlyContacts.filter(c =>
-          c.metadata.aiReasoning?.toLowerCase().includes('hr') ||
-          c.metadata.aiReasoning?.toLowerCase().includes('recruit')
-        ).length
-
-        await creditTracker.logUsage({
-          userId: user.id,
-          action: 'domain_search',
-          creditsUsed: totalCreditCost,
-          creditsEstimated: totalCreditCost,
-          creditsActual: totalCreditCost,
-          results: contactsFound,
-          costPerContact: totalCreditCost / contactsFound,
-          efficiency: (contactsFound / totalCreditCost) * 100,
-          metadata: {
-            company,
-            domain: searchDomain,
-            searchType: 'linkedin_fallback',
-            contactsFound,
-            hrContactsFound,
-            teamContactsFound: contactsFound - hrContactsFound,
-          },
-        })
-
-        console.log(`💰 LinkedIn fallback: ${totalCreditCost} credits for ${contactsFound} contacts`)
-        console.log('=== LinkedIn Fallback Mode Complete ===')
-
-        return NextResponse.json({
-          success: true,
-          contacts: savedContacts || linkedInOnlyContacts,
-          creditsRemaining: user.credits - totalCreditCost,
-          remainingCredits: user.credits - totalCreditCost,
-          creditsDeducted: totalCreditCost,
-          fallback_mode: true,
-          fallback_type: 'linkedin_inferred',
-          message: `Found ${contactsFound} likely contacts via AI analysis. Verified emails not available - reach out via LinkedIn.`,
-          linkedin_search_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' HR recruiter')}`,
-          guidance: {
-            method: 'linkedin',
-            instructions: [
-              'Search for these people on LinkedIn',
-              'Send personalized connection requests or InMails',
-              `Mention the ${jobTitle || 'position'} you're applying for`,
-              'Be professional and concise in your message'
-            ]
-          },
-          strategy: {
-            reasoning: strategy.reasoning,
-            confidence: strategy.confidenceScore,
-            approach: strategy.approach,
-          },
-        })
-      }
-
-      // FALLBACK TIER 2: No LinkedIn contacts - return manual guidance
-      console.log('⚠️ No LinkedIn contacts available - providing manual guidance')
-
+      // FALLBACK: Provide manual guidance when no contacts found
       const altDomains = [
         searchDomain.replace(/inc\.com$/, '.com'),
         searchDomain.replace(/llc\.com$/, '.com'),
@@ -807,259 +487,150 @@ export async function POST(request: Request) {
       )
     }
 
-    // Pre-filter obvious bad contacts (but keep contacts without emails)
-    const preFiltered = snovResults.filter(contact => {
-      const email = contact.email?.toLowerCase() || ''
+    // Process LinkedIn contacts - try email pattern generation first
+    console.log('=== Step 4: Email Pattern Generation ===')
+    let contactsWithVerifiedEmails: any[] = []
 
-      // Allow contacts with no email (we'll show their LinkedIn)
-      if (!email) return true
+    try {
+      const topContacts = linkedInContacts.slice(0, 4) // Only top 4 to control costs
+      console.log(`Attempting to generate emails for ${topContacts.length} LinkedIn contacts...`)
 
-      // Filter out generic emails
-      const genericPrefixes = [
-        'info@', 'support@', 'hello@', 'contact@', 'sales@', 'admin@',
-        'service@', 'help@', 'team@', 'office@', 'general@', 'marketing@',
-        'press@', 'media@', 'noreply@', 'automated@', 'express@', 'response@',
-      ]
-      return !genericPrefixes.some(prefix => email.startsWith(prefix))
-    })
-
-    const contactsWithEmails = preFiltered.filter(c => c.email).length
-    const contactsWithoutEmails = preFiltered.length - contactsWithEmails
-
-    console.log(`Pre-filtered: ${preFiltered.length} total (${contactsWithEmails} with emails, ${contactsWithoutEmails} LinkedIn-only)`)
-
-    if (preFiltered.length === 0) {
-      return NextResponse.json(
-        {
-          error: 'No quality contacts found',
-          message: `Found ${snovResults.length} contacts but all were generic emails (info@, support@, etc.). This company may not have individual contact information available.`,
-        },
-        { status: 404 }
+      const contactsWithEmails = await emailPatternGenerator.generateVerifiedEmails(
+        topContacts,
+        searchDomain,
+        2 // Max 2 verifications per contact to stay under budget
       )
+
+      contactsWithVerifiedEmails = contactsWithEmails.filter(c => c.generatedEmail?.status === 'valid')
+
+      if (contactsWithVerifiedEmails.length > 0) {
+        console.log(`✅ Pattern generation SUCCESS: ${contactsWithVerifiedEmails.length} valid emails found`)
+      } else {
+        console.log('⚠️ Pattern generation found no valid emails - will use LinkedIn-only contacts')
+      }
+    } catch (error) {
+      console.error('Pattern generation failed:', error)
+      console.log('🔄 Continuing with LinkedIn-only mode')
     }
 
-    // Format for AI
-    let formattedContacts = preFiltered.map(c => ({
-      email: c.email || 'no-email@placeholder.com', // Placeholder for contacts without emails
+    // Prepare final contacts list
+    let finalContacts: any[] = []
+
+    // Add pattern-generated contacts if we have them
+    if (contactsWithVerifiedEmails.length > 0) {
+      finalContacts = contactsWithVerifiedEmails.map(c => ({
+        name: c.name,
+        firstName: c.name.split(' ')[0],
+        lastName: c.name.split(' ').slice(1).join(' ') || '',
+        title: c.title,
+        email: c.generatedEmail!.email,
+        emailStatus: c.generatedEmail!.status,
+        linkedinUrl: c.profileUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + c.title)}`,
+        relevanceScore: c.relevanceScore,
+        reasoning: c.reasoning,
+        department: c.department,
+        dataSource: 'pattern_generated' as const
+      }))
+    }
+
+    // Add remaining LinkedIn contacts (without verified emails)
+    const usedNames = new Set(finalContacts.map(c => c.name.toLowerCase()))
+    const remainingLinkedInContacts = linkedInContacts
+      .filter(c => !usedNames.has(c.name.toLowerCase()))
+      .slice(0, 4 - finalContacts.length) // Fill up to 4 total
+
+    remainingLinkedInContacts.forEach(lc => {
+      finalContacts.push({
+        name: lc.name,
+        firstName: lc.name.split(' ')[0],
+        lastName: lc.name.split(' ').slice(1).join(' ') || '',
+        title: lc.title,
+        email: null,
+        emailStatus: 'unknown' as const,
+        linkedinUrl: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + lc.title)}`,
+        relevanceScore: lc.relevanceScore,
+        reasoning: lc.reasoning,
+        department: lc.department,
+        dataSource: 'linkedin_inferred' as const
+      })
+    })
+
+    console.log(`📊 Final contacts: ${finalContacts.length} total (${finalContacts.filter(c => c.email).length} with emails)`)
+
+    // Convert final contacts to database format
+    const contactsToSave = finalContacts.map(c => ({
+      email: c.email,
       first_name: c.firstName,
       last_name: c.lastName,
-      full_name: [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Unknown',
-      position: c.position,
-      email_status: c.email ? (c.status || 'unverified') : 'no_email',
-      linkedin_url: c.source || null, // LinkedIn URL from source_page
-      confidence_score: c.email ? 75 : 35, // Snov.io contacts get MEDIUM confidence initially
-      confidence_level: c.email ? 'medium' : 'low',
-      verification_status: c.email ? 'inferred' : 'generated',
-    }))
-
-    // STEP 4.5: SMART Email Verification (Only for contacts without emails)
-    // Match LinkedIn contacts with Snov.io results to avoid duplicate verification
-    if (linkedInContacts && linkedInContacts.length > 0) {
-      console.log('=== Step 4.5: SMART Email Verification ===')
-      console.log('💡 Only verifying contacts that Snov.io did NOT find...')
-
-      // Build a set of Snov.io contact names for fast lookup
-      const snovContactNames = new Set(
-        formattedContacts.map(c => c.full_name.toLowerCase())
-      )
-
-      // Find LinkedIn contacts that DON'T match any Snov.io contact
-      const linkedInOnlyContacts = linkedInContacts.filter(lc => {
-        const linkedInName = lc.name.toLowerCase()
-        const hasMatch = Array.from(snovContactNames).some(snovName =>
-          snovName.includes(linkedInName) || linkedInName.includes(snovName)
-        )
-        return !hasMatch // Keep only LinkedIn contacts NOT in Snov.io results
-      })
-
-      console.log(`   📊 ${linkedInContacts.length} LinkedIn contacts total`)
-      console.log(`   ✅ ${formattedContacts.filter(c => c.email !== 'no-email@placeholder.com').length} already have Snov.io emails - SKIPPED`)
-      console.log(`   🔍 ${linkedInOnlyContacts.length} need verification`)
-
-      if (linkedInOnlyContacts.length > 0) {
-        try {
-          let step4_5Start = Date.now()
-          const topContactsToVerify = linkedInOnlyContacts.slice(0, 4) // Verify top 4
-          const verificationResults = await emailPatternGenerator.generateVerifiedEmails(
-            topContactsToVerify,
-            searchDomain,
-            2 // Max 2 pattern tests per contact to control costs
-          )
-          measureStep('Smart Email Verification', step4_5Start)
-
-          // Add verified LinkedIn contacts to formatted contacts
-          verificationResults.forEach((contact: any) => {
-            const nameParts = contact.name.split(' ')
-            const formattedContact = {
-              email: contact.generatedEmail?.email || 'no-email@placeholder.com',
-              first_name: nameParts[0] || 'Unknown',
-              last_name: nameParts.slice(1).join(' ') || '',
-              full_name: contact.name,
-              position: contact.title,
-              email_status: contact.generatedEmail?.status || 'unknown',
-              linkedin_url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' ' + contact.title)}`,
-              confidence_score: contact.generatedEmail?.status === 'valid' ? 85 :
-                               contact.generatedEmail?.status === 'catch-all' ? 65 : 35,
-              confidence_level: contact.generatedEmail?.status === 'valid' ? 'high' :
-                               contact.generatedEmail?.status === 'catch-all' ? 'medium' : 'low',
-              verification_status: contact.generatedEmail?.status === 'valid' ? 'verified' : 'generated',
-            }
-
-            formattedContacts.push(formattedContact)
-
-            if (contact.generatedEmail?.status === 'valid') {
-              console.log(`   ✅ VERIFIED: ${contact.name} - ${contact.generatedEmail.email}`)
-            }
-          })
-
-          const verifiedCount = verificationResults.filter((c: any) => c.generatedEmail?.status === 'valid').length
-          console.log(`✅ Smart verification complete: ${verifiedCount}/${topContactsToVerify.length} LinkedIn contacts verified`)
-
-        } catch (error) {
-          console.error('⚠️  Smart verification failed (non-fatal):', error)
-          // Continue without verification - not critical
-        }
-      } else {
-        console.log('✅ All contacts already have Snov.io emails - no verification needed!')
-      }
-      console.log('=== END SMART VERIFICATION ===\n')
-    }
-
-    // STEP 5: AI ranks and filters to top 1-4
-    // NOW USES ENHANCED DATA to prioritize specific people from org chart
-    console.log('Step 5: AI ranking contacts with enhanced matching...')
-    console.log(`\n=== 🤖 AI RANKING DEBUG - BEFORE ===`)
-    console.log(`Sending ${formattedContacts.length} contacts to AI for ranking`)
-    console.log('Sample of contacts being sent to AI:')
-    formattedContacts.slice(0, 5).forEach((c, i) => {
-      console.log(`  ${i + 1}. ${c.full_name} - ${c.position}`)
-    })
-
-    let step5Start = Date.now()
-    const rankedContacts = await contactReasoner.rankContacts(
-      formattedContacts,
-      jobContext,
-      strategy,
-      enhancedContext
-    )
-    measureStep('AI Contact Ranking', step5Start)
-
-    console.log(`\n=== 🤖 AI RANKING DEBUG - AFTER ===`)
-    console.log(`AI returned ${rankedContacts.length} contacts (from ${formattedContacts.length} candidates)`)
-
-    if (rankedContacts.length === 0) {
-      console.log('❌ AI FILTERED OUT ALL CONTACTS!')
-      console.log('This means AI marked all as "exclude" or scored them too low')
-      console.log('=== END AI RANKING DEBUG ===\n')
-
-      return NextResponse.json(
-        {
-          error: 'No relevant contacts found',
-          message: `Found ${preFiltered.length} contacts but the AI determined none were highly relevant to this ${jobTitle || 'position'}. They may not have the right roles for this job application.`,
-        },
-        { status: 404 }
-      )
-    }
-
-    console.log('✅ AI KEPT THESE CONTACTS:')
-    rankedContacts.forEach((c, i) => {
-      console.log(`  ${i + 1}. ${c.full_name} - ${c.position} - Score: ${c.analysis.relevanceScore}`)
-      console.log(`     Reasoning: ${c.analysis.reasoning}`)
-    })
-    console.log('=== END AI RANKING DEBUG ===\n')
-
-    console.log(`AI selected ${rankedContacts.length} top contacts`)
-
-    // STEP 6: Save to database with AI analysis
-    const contactsToSave = rankedContacts.map(contact => ({
-      email: contact.email === 'no-email@placeholder.com' ? null : contact.email,
-      first_name: contact.first_name,
-      last_name: contact.last_name,
-      full_name: contact.full_name,
-      position: contact.position,
+      full_name: c.name,
+      position: c.title,
       company_name: company,
       company_domain: searchDomain,
-      linkedin_url: contact.linkedin_url || null,
-      email_status: contact.email_status === 'no_email' ? 'unknown' : contact.email_status,
-      relevance_score: contact.analysis.relevanceScore,
-      is_key_decision_maker: contact.analysis.relevanceScore >= 85,
-      department: strategy.targetDepartments[0] || null,
-      source: 'snov.io',
+      linkedin_url: c.linkedinUrl,
+      email_status: c.emailStatus,
+      relevance_score: c.relevanceScore,
+      is_key_decision_maker: c.relevanceScore >= 85,
+      department: c.department,
+      source: c.dataSource,
       metadata: {
-        aiReasoning: contact.analysis.reasoning,
-        keyStrengths: contact.analysis.keyStrengths,
-        strategyReasoning: strategy.reasoning,
-        strategyConfidence: strategy.confidenceScore,
-        strategyApproach: strategy.approach,
-      },
+        aiReasoning: c.reasoning,
+        contactMethod: c.email ? 'email' : 'linkedin',
+        searchGuidance: !c.email ? `Search for "${c.name}" at "${company}" on LinkedIn` : undefined,
+      }
     }))
 
-    console.log('Saving contacts to database...')
-    const { data: savedContacts, error: saveError } = await supabase
+    // Save to database
+    const { data: savedContacts, error: saveError} = await supabase
       .from('contacts')
       .insert(contactsToSave)
       .select()
 
     if (saveError) {
       console.error('Error saving contacts:', saveError)
-      // Continue anyway - we'll return the contacts even if saving failed
     } else {
-      console.log('Contacts saved:', savedContacts?.length)
+      console.log(`✅ Saved ${savedContacts?.length} contacts to database`)
     }
 
-    // STEP 7: Calculate and deduct credits based on contacts found
-    const contactsFound = rankedContacts.length
+    // Calculate cost - 1 credit per contact
+    const contactsFound = finalContacts.length
     const totalCreditCost = contactsFound * CREDIT_COST_PER_CONTACT
-    console.log(`Credits required: ${contactsFound} contacts × ${CREDIT_COST_PER_CONTACT} = ${totalCreditCost} credits`)
 
     // Check if user has enough credits
     if (user.credits < totalCreditCost) {
-      console.error('Insufficient credits for contacts found:', user.credits, 'needed:', totalCreditCost)
       return NextResponse.json(
         {
           error: 'Insufficient credits',
-          message: `Found ${contactsFound} contact${contactsFound !== 1 ? 's' : ''} (${totalCreditCost} credit${totalCreditCost !== 1 ? 's' : ''} required). You have ${user.credits} credit${user.credits !== 1 ? 's' : ''}.`,
-          creditsRequired: totalCreditCost,
-          creditsAvailable: user.credits,
+          message: `Found ${contactsFound} contacts (${totalCreditCost} credits required). You have ${user.credits} credits.`,
           contactsFound,
+          creditsRequired: totalCreditCost,
         },
         { status: 402 }
       )
     }
 
-    console.log('Deducting credits...')
-    const { error: creditError } = await supabase
+    // Deduct credits
+    await supabase
       .from('users')
       .update({ credits: user.credits - totalCreditCost })
       .eq('id', user.id)
-
-    if (creditError) {
-      console.error('Error updating credits:', creditError)
-    }
 
     await supabase.from('credit_transactions').insert({
       user_id: user.id,
       amount: -totalCreditCost,
       type: 'contact_search',
-      description: `AI-powered search for ${company} (${contactsFound} contact${contactsFound !== 1 ? 's' : ''})`,
+      description: `LinkedIn-based contact search for ${company} (${contactsFound} contacts)`,
       metadata: {
-        strategy: strategy.reasoning,
-        confidence: strategy.confidenceScore,
-        approach: strategy.approach,
         contactsFound,
-        creditsPerContact: CREDIT_COST_PER_CONTACT,
+        withEmails: finalContacts.filter(c => c.email).length,
+        linkedinOnly: finalContacts.filter(c => !c.email).length,
       },
     })
 
-    // STEP 8: Track credit usage for optimization analysis
-    const hrContactsFound = rankedContacts.filter(c =>
-      c.analysis?.keyStrengths?.some((s: string) =>
-        s.toLowerCase().includes('hr') ||
-        s.toLowerCase().includes('recruit') ||
-        s.toLowerCase().includes('talent')
-      )
+    // Track credit usage
+    const hrContactsFound = finalContacts.filter(c =>
+      c.reasoning?.toLowerCase().includes('hr') ||
+      c.reasoning?.toLowerCase().includes('recruit')
     ).length
-    const teamContactsFound = contactsFound - hrContactsFound
 
     await creditTracker.logUsage({
       userId: user.id,
@@ -1073,39 +644,17 @@ export async function POST(request: Request) {
       metadata: {
         company,
         domain: searchDomain,
-        searchType: strategy.approach,
+        searchType: 'linkedin_apify',
         contactsFound,
         hrContactsFound,
-        teamContactsFound,
+        teamContactsFound: contactsFound - hrContactsFound,
       },
     })
 
-    console.log(`📊 Credit Usage Tracked: ${totalCreditCost} credits for ${contactsFound} contacts (${(totalCreditCost / contactsFound).toFixed(2)} per contact)`)
-
-    // COST ANALYSIS: Ensure we're under $0.20 budget
-    const SNOV_COST_PER_CREDIT = 0.029 // $29.25 / 1000 credits
-    const CLAUDE_COST_ESTIMATE = 0.06 // ~6 cents per search (job analysis + ranking)
-    const totalSnovCostUSD = totalCreditCost * SNOV_COST_PER_CREDIT
-    const totalCostUSD = totalSnovCostUSD + CLAUDE_COST_ESTIMATE
-    const costPerContactUSD = totalCostUSD / contactsFound
-
-    console.log('=== COST BREAKDOWN ===')
-    console.log(`💰 Snov.io: ${totalCreditCost} credits × $${SNOV_COST_PER_CREDIT} = $${totalSnovCostUSD.toFixed(4)}`)
-    console.log(`🤖 Claude AI: ~$${CLAUDE_COST_ESTIMATE.toFixed(4)}`)
-    console.log(`📊 Total Cost: $${totalCostUSD.toFixed(4)}`)
-    console.log(`📍 Cost per Contact: $${costPerContactUSD.toFixed(4)}`)
-    console.log(`🎯 Budget Target: $0.20`)
-    console.log(`${totalCostUSD < 0.20 ? '✅ UNDER BUDGET' : '⚠️  OVER BUDGET'}`)
-
     const totalTime = Date.now() - startTime
-    console.log('=== PERFORMANCE SUMMARY ===')
-    console.log(`🕐 Total Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`)
-    console.log('Breakdown:')
-    Object.entries(timings).forEach(([step, duration]) => {
-      const percentage = ((duration / totalTime) * 100).toFixed(1)
-      console.log(`   ${step}: ${duration}ms (${percentage}%)`)
-    })
-    console.log('=== AI Contact Search Complete ===')
+    console.log(`💰 Contact search: ${totalCreditCost} credits for ${contactsFound} contacts`)
+    console.log(`⏱️  Total time: ${totalTime}ms`)
+    console.log('=== Contact Search Complete ===')
 
     return NextResponse.json({
       success: true,
@@ -1113,19 +662,19 @@ export async function POST(request: Request) {
       creditsRemaining: user.credits - totalCreditCost,
       remainingCredits: user.credits - totalCreditCost,
       creditsDeducted: totalCreditCost,
-      creditsPerContact: CREDIT_COST_PER_CONTACT,
-      cached: false,
+      message: `Found ${contactsFound} contacts via LinkedIn and AI analysis.${finalContacts.filter(c => !c.email).length > 0 ? ' Some contacts available via LinkedIn only.' : ''}`,
+      linkedin_search_url: finalContacts.filter(c => !c.email).length > 0 ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' HR recruiter')}` : undefined,
       strategy: {
         reasoning: strategy.reasoning,
         confidence: strategy.confidenceScore,
         approach: strategy.approach,
-        targetTitles: strategy.targetTitles,
       },
       performance: {
         totalTimeMs: totalTime,
         breakdown: timings
       }
     })
+
 
   } catch (error: any) {
     console.error('=== Contact Search Error ===')
