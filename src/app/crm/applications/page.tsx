@@ -98,10 +98,12 @@ export default function ApplicationsPage() {
               </div>
             </div>
 
-            <ContactFinderButton
-              selectedApplicationIds={selectedApplications}
-              onComplete={handleContactFinderComplete}
-            />
+            <div className="flex items-center gap-3">
+              <ContactFinderButton
+                selectedApplicationIds={selectedApplications}
+                onComplete={handleContactFinderComplete}
+              />
+            </div>
           </div>
         </div>
 
@@ -131,7 +133,7 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-        {/* Applications Table */}
+        {/* Applications View - TABLE ONLY */}
         {!isLoading && !error && (
           <ApplicationsTable
             applications={applications}
