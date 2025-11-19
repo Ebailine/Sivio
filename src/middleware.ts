@@ -13,14 +13,8 @@ const isPublicRoute = createRouteMatcher([
   '/blog(.*)',
   '/help(.*)',
   '/changelog(.*)',
-  // API routes
-  '/api/webhooks(.*)',
-  '/api/jobs/sync',  // Allow Vercel cron to access sync endpoint
-  '/api/admin/cache-cleanup',  // Allow Vercel cron to access cache cleanup endpoint
-  '/api/test-adzuna',  // Allow Adzuna testing endpoint
-  '/api/test-sync',  // Allow sync testing endpoint
-  '/api/test-direct',  // Allow direct API testing endpoint
-  '/api/test/job-research',  // Allow job research testing endpoint
+  // API routes - Let them handle their own auth
+  '/api/(.*)',
 ])
 
 export default clerkMiddleware(async (auth, request) => {
