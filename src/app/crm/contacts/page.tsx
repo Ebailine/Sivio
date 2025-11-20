@@ -48,17 +48,31 @@ export default function ContactsPage() {
       setIsLoading(true);
       setError(null);
 
+      console.log('[Contacts Page] Fetching contacts...');
+
       // Simple GET request to fetch all user's contacts
-      const response = await fetch('/api/contacts/all');
+      const response = await fetch('/api/contacts/all', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      console.log('[Contacts Page] Response status:', response.status);
+      console.log('[Contacts Page] Response ok:', response.ok);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch contacts');
+        const errorData = await response.json();
+        console.error('[Contacts Page] Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch contacts');
       }
 
       const data = await response.json();
+      console.log('[Contacts Page] Success! Data:', data);
+      console.log('[Contacts Page] Contacts count:', data.contacts?.length || 0);
       setContacts(data.contacts || []);
     } catch (err: any) {
-      console.error('Error fetching contacts:', err);
+      console.error('[Contacts Page] Error fetching contacts:', err);
       setError(err.message || 'Failed to load contacts');
     } finally {
       setIsLoading(false);
