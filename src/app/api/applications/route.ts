@@ -8,6 +8,10 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // POST /api/applications - Create new application (Mark as Applied)
 export async function POST(request: Request) {
   try {
