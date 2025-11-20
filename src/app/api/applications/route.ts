@@ -115,16 +115,22 @@ export async function POST(request: Request) {
 // GET /api/applications - Fetch all user's applications
 export async function GET() {
   try {
+    console.log('[Applications API] Starting request...')
+
     const { userId } = await auth()
+    console.log('[Applications API] Clerk userId:', userId)
 
     if (!userId) {
+      console.log('[Applications API] No userId - returning 401')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    console.log('[Applications API] Creating Supabase client...')
     const supabase = createAdminClient()
+    console.log('[Applications API] Supabase client created')
 
     // Get user from Supabase
     const { data: user } = await supabase
@@ -165,9 +171,10 @@ export async function GET() {
     })
 
   } catch (error: any) {
-    console.error('Fetch applications error:', error)
+    console.error('[Applications API] FATAL ERROR:', error)
+    console.error('[Applications API] Error stack:', error.stack)
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message, stack: error.stack },
       { status: 500 }
     )
   }

@@ -9,13 +9,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
   try {
+    console.log('[Contacts API] Starting request...')
+
     const { userId } = await auth()
+    console.log('[Contacts API] Clerk userId:', userId)
 
     if (!userId) {
+      console.log('[Contacts API] No userId - returning 401')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('[Contacts API] Creating Supabase client...')
     const supabase = createAdminClient()
+    console.log('[Contacts API] Supabase client created')
 
     // Get user from Supabase
     const { data: user, error: userError } = await supabase
@@ -60,9 +66,10 @@ export async function GET() {
     })
 
   } catch (error: any) {
-    console.error('Get all contacts error:', error)
+    console.error('[Contacts API] FATAL ERROR:', error)
+    console.error('[Contacts API] Error stack:', error.stack)
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error.message, stack: error.stack },
       { status: 500 }
     )
   }
