@@ -284,6 +284,7 @@ export const jobSyncService = new JobSyncService()
 
 // Stub export to prevent build errors
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface SyncStats {
   total: number
@@ -295,7 +296,14 @@ interface SyncStats {
 }
 
 export class JobSyncService {
-  private supabase = createAdminClient()
+  private _supabase: SupabaseClient | null = null
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = createAdminClient()
+    }
+    return this._supabase
+  }
 
   async syncJobs(): Promise<SyncStats> {
     throw new Error('Job sync service deprecated - migrating to Apify')
